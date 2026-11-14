@@ -5,6 +5,7 @@ import Setup from "./pages/Setup.vue";
 import Dashboard from "./pages/Dashboard.vue";
 import DashboardHome from "./pages/DashboardHome.vue";
 import Console from "./pages/Console.vue";
+const Cleanup = () => import("./pages/Cleanup.vue");
 import Compose from "./pages/Compose.vue";
 import ContainerTerminal from "./pages/ContainerTerminal.vue";
 
@@ -56,6 +57,10 @@ const routes = [
                                 name: "containerTerminalEndpoint",
                             },
                         ]
+                    },
+                    {
+                        path: "/cleanup",
+                        component: Cleanup,
                     },
                     {
                         path: "/console",

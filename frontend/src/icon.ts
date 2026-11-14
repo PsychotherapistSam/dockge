@@ -69,6 +69,7 @@ import {
     faKey,
     faLinkSlash,
     faTruckFast,
+    faBroom,
 } from "@fortawesome/free-solid-svg-icons";
 
 library.add(
@@ -139,6 +140,7 @@ library.add(
     faKey,
     faLinkSlash,
     faTruckFast,
+    faBroom,
 );
 
 export { FontAwesomeIcon };

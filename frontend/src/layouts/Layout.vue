@@ -35,6 +35,10 @@
                         <font-awesome-icon icon="home" />
                         <span class="nav-label">{{ $t("home") }}</span>
                     </router-link>
+                    <router-link to="/cleanup" class="nav-link">
+                        <font-awesome-icon icon="broom" />
+                        <span class="nav-label">{{ $t("cleanup") }}</span>
+                    </router-link>
                     <router-link to="/console" class="nav-link">
                         <font-awesome-icon icon="terminal" />
                         <span class="nav-label">{{ $t("console") }}</span>
