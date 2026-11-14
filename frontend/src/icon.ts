@@ -68,6 +68,7 @@ import {
     faCircleHalfStroke,
     faKey,
     faLinkSlash,
+    faTruckFast,
 } from "@fortawesome/free-solid-svg-icons";
 
 library.add(
@@ -137,6 +138,7 @@ library.add(
     faCircleHalfStroke,
     faKey,
     faLinkSlash,
+    faTruckFast,
 );
 
 export { FontAwesomeIcon };

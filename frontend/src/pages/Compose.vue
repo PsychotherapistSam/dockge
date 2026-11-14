@@ -50,6 +50,10 @@
                             <font-awesome-icon icon="stop" class="me-1" />
                             {{ $t("downStack") }}
                         </BDropdownItem>
+                        <BDropdownItem v-if="endpoint === ''" @click="showMoveDialog = true">
+                            <font-awesome-icon icon="truck-fast" class="me-1" />
+                            {{ $t("moveToServer") }}
+                        </BDropdownItem>
                     </BDropdown>
                 </div>
 
@@ -57,6 +61,21 @@
                 <button v-if="!isEditMode" class="btn btn-danger" :disabled="processing" @click="showDeleteDialog = !showDeleteDialog">
                     <font-awesome-icon icon="trash" class="me-1" />
                     {{ $t("deleteStack") }}
+                </button>
+            </div>
+
+            <!-- Left behind by a move -->
+            <div v-if="!isAdd && stack.movedTo" class="moved-callout">
+                <font-awesome-icon icon="truck-fast" class="moved-callout-icon" />
+                <div class="moved-callout-text">
+                    <div>{{ $t("movedBanner", { name: stack.movedTo.name }) }}</div>
+                    <div class="moved-callout-hint">{{ $t("movedBannerHint", { when: movedAgo }) }}</div>
+                </div>
+                <a :href="`${stack.movedTo.url}/compose/${stack.name}`" target="_blank" rel="noopener" class="btn btn-normal btn-sm">
+                    {{ $t("moveOpenThere", { name: stack.movedTo.name }) }}
+                </a>
+                <button class="btn btn-danger btn-sm" type="button" :disabled="processing" @click="showRemoveMovedDialog = true">
+                    {{ $t("movedRemoveCopy") }}
                 </button>
             </div>
 
@@ -268,6 +287,19 @@
                 {{ $t("stackNotManagedByDockgeMsg") }}
             </div>
 
+            <!-- Move to another server -->
+            <MoveStackDialog
+                v-if="!isAdd && endpoint === ''"
+                v-model="showMoveDialog"
+                :stack-name="stack.name"
+                :running="active"
+                @moved="loadStack"
+            />
+
+            <BModal v-model="showRemoveMovedDialog" :cancelTitle="$t('cancel')" :okTitle="$t('movedRemoveCopy')" okVariant="danger" @ok="removeMovedCopy">
+                {{ $t("movedRemoveConfirm", { name: stack.movedTo?.name ?? "" }) }}
+            </BModal>
+
             <!-- Delete Dialog -->
             <BModal v-model="showDeleteDialog" :cancelTitle="$t('cancel')" :okTitle="$t('deleteStack')" okVariant="danger" @ok="deleteDialog">
                 {{ $t("deleteStackMsg") }}
@@ -296,6 +328,7 @@ import {
 } from "../../../common/util-common";
 import { BModal } from "bootstrap-vue-next";
 import NetworkInput from "../components/NetworkInput.vue";
+import MoveStackDialog from "../components/MoveStackDialog.vue";
 import dotenv from "dotenv";
 import { ref } from "vue";
 import dayjs from "dayjs";
@@ -321,6 +354,7 @@ export default {
         FontAwesomeIcon,
         CodeMirror,
         BModal,
+        MoveStackDialog,
     },
     beforeRouteUpdate(to, from, next) {
         this.exitConfirm(next);
@@ -378,6 +412,8 @@ export default {
             stopDockerStatsTimeout: false,
             imageUpdates: null,
             checkingImageUpdates: false,
+            showMoveDialog: false,
+            showRemoveMovedDialog: false,
         };
     },
     computed: {
@@ -438,6 +474,10 @@ export default {
             return Object.values(this.imageUpdates?.services ?? {})
                 .filter((s) => !s.digestUpdate && s.newTags?.length > 0)
                 .map((s) => s.service);
+        },
+
+        movedAgo() {
+            return this.stack.movedTo ? dayjs(this.stack.movedTo.at).fromNow() : "";
         },
 
         imageUpdatesCheckedAgo() {
@@ -597,6 +637,17 @@ export default {
                 }
                 if (!this.stopServiceStatusTimeout) {
                     this.startServiceStatusTimeout();
+                }
+            });
+        },
+
+        removeMovedCopy() {
+            this.processing = true;
+            this.$root.getSocket().emit("moveStackRemoveSource", this.stack.name, (res) => {
+                this.processing = false;
+                this.$root.toastRes(res);
+                if (res.ok) {
+                    this.$router.push("/");
                 }
             });
         },
@@ -974,6 +1025,38 @@ export default {
             border-radius: 8px !important;
         }
     }
+}
+
+.moved-callout {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 12px 12px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--hairline-strong);
+    background-color: var(--raised);
+
+    .btn:first-of-type {
+        margin-left: auto;
+    }
+}
+
+.moved-callout-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--text-2);
+}
+
+.moved-callout-text {
+    min-width: 0;
+}
+
+.moved-callout-hint {
+    font-size: 13px;
+    color: var(--text-2);
 }
 
 .update-callout {

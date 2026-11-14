@@ -16,6 +16,7 @@ import General from "./components/settings/General.vue";
 const Security = () => import("./components/settings/Security.vue");
 const GlobalEnv = () => import("./components/settings/GlobalEnv.vue");
 const Registries = () => import("./components/settings/Registries.vue");
+const LinkedServers = () => import("./components/settings/LinkedServers.vue");
 import About from "./components/settings/About.vue";
 
 const routes = [
@@ -91,6 +92,10 @@ const routes = [
                             {
                                 path: "registries",
                                 component: Registries,
+                            },
+                            {
+                                path: "linked",
+                                component: LinkedServers,
                             },
                         ]
                     },

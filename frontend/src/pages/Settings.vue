@@ -98,6 +98,11 @@ export default {
                     description: this.$t("settingsRegistriesDescription"),
                     icon: "key",
                 },
+                linked: {
+                    title: this.$t("linkedServersMenu"),
+                    description: this.$t("settingsLinkedDescription"),
+                    icon: "link",
+                },
                 globalEnv: {
                     title: this.$t("GlobalEnv"),
                     description: this.$t("settingsGlobalEnvDescription"),
