@@ -1,0 +1,82 @@
+name: Release
+
+# Actions -> Release -> Run workflow (on master).
+# Picks the next version from the commits since the last tag (or the chosen bump),
+# bumps package.json, tags vX.Y.Z, creates a GitHub release with the commit list
+# and publishes the versioned Docker image.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump (auto: feat -> minor, breaking -> major, else patch)"
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+        default: auto
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.next.outputs.version }}
+      tag: ${{ steps.next.outputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Determine next version
+        id: next
+        env:
+          BUMP: ${{ inputs.bump }}
+          NOTES_FILE: ${{ runner.temp }}/release-notes.md
+        run: node .github/scripts/next-version.mjs
+
+      - name: Bump version, commit and tag
+        env:
+          VERSION: ${{ steps.next.outputs.version }}
+          TAG: ${{ steps.next.outputs.tag }}
+        run: |
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: release $TAG"
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "HEAD:${{ github.ref_name }}" "$TAG"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.next.outputs.tag }}
+        run: gh release create "$TAG" --title "$TAG" --notes-file "${{ runner.temp }}/release-notes.md" --verify-tag
+
+  publish:
+    needs: release
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish.yml
+    with:
+      version: ${{ needs.release.outputs.version }}
+      ref: ${{ needs.release.outputs.tag }}
