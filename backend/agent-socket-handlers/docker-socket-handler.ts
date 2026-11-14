@@ -4,6 +4,7 @@ import { callbackError, callbackResult, checkLogin, DockgeSocket, ValidationErro
 import { Stack } from "../stack";
 import { AgentSocket } from "../../common/agent-socket";
 import { ImageUpdateChecker } from "../image-update-checker";
+import { CleanupOptions, DockerCleanup } from "../docker-cleanup";
 
 export class DockerSocketHandler extends AgentSocketHandler {
     create(socket : DockgeSocket, server : DockgeServer, agentSocket : AgentSocket) {
@@ -366,6 +367,38 @@ export class DockerSocketHandler extends AgentSocketHandler {
                     ok: true,
                     imageUpdates,
                 }, callback);
+            } catch (e) {
+                callbackError(e, callback);
+            }
+        });
+
+        // Cleanup: what `docker system prune --all` would remove
+        agentSocket.on("cleanupPreview", async (keepStoppedContainers : unknown, callback) => {
+            try {
+                checkLogin(socket);
+                const preview = await DockerCleanup.preview({ containers: keepStoppedContainers !== true });
+                callbackResult({ ok: true,
+                    preview }, callback);
+            } catch (e) {
+                callbackError(e, callback);
+            }
+        });
+
+        agentSocket.on("cleanupPrune", async (options : unknown, callback) => {
+            try {
+                checkLogin(socket);
+                const o = (options ?? {}) as Record<string, unknown>;
+                const parsed : CleanupOptions = {
+                    containers: o.containers === true,
+                    networks: o.networks === true,
+                    images: o.images === "all" || o.images === "dangling" ? o.images : "none",
+                    buildCache: o.buildCache === true,
+                    volumes: o.volumes === true,
+                };
+                const steps = await DockerCleanup.prune(parsed);
+                server.sendStackList();
+                callbackResult({ ok: true,
+                    steps }, callback);
             } catch (e) {
                 callbackError(e, callback);
             }
