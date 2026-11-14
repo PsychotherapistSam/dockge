@@ -1,10 +1,7 @@
-name: Publish Image (fork)
+name: Publish Image
 
-# Builds the Docker image and publishes it to the GitHub Container Registry of
-# whichever account owns the repository running this workflow:
-#   ghcr.io/<owner>/<repo>
-# It authenticates with the repository's own GITHUB_TOKEN, so it can only
-# publish packages belonging to that repository's owner.
+# Lints, type-checks and builds the app, then publishes the Docker image to
+# ghcr.io/<owner>/<repo> with the repository's own GITHUB_TOKEN.
 #
 # Tags:
 #   - branch pushes     -> :<branch-name> (e.g. :feat-image-update-check), :sha-<short>
@@ -31,8 +28,6 @@ concurrency:
 
 jobs:
   publish:
-    # Upstream publishes through its own release scripts
-    if: github.repository != 'louislam/dockge'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -53,6 +48,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --no-fund --no-audit
+
+      - name: Lint
+        run: npm run lint
 
       - name: Check TypeScript
         run: npm run check-ts
