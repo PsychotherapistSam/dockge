@@ -112,6 +112,12 @@ a {
     opacity: 1;
 }
 
+// Floating labels keep a placeholder only so Bootstrap can tell an empty field apart;
+// it must stay invisible or it shows through behind the label
+.form-floating > .form-control::placeholder {
+    color: transparent !important;
+}
+
 ::selection {
     background: var(--accent-soft);
 }
