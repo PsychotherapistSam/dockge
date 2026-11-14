@@ -251,6 +251,8 @@ export class MoveReceiver {
         if (dir) {
             await fsAsync.rm(dir, { recursive: true,
                 force: true }).catch(() => {});
+            // Fails while another transfer is in progress, which is fine
+            await fsAsync.rmdir(path.dirname(dir)).catch(() => {});
         }
     }
 }

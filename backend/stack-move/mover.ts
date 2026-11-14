@@ -322,6 +322,7 @@ export class StackMover {
             client?.disconnect();
             await fsAsync.rm(workDir, { recursive: true,
                 force: true }).catch(() => {});
+            await fsAsync.rmdir(path.dirname(workDir)).catch(() => {});
             this.active.delete(stackName);
             server.sendStackList();
         }

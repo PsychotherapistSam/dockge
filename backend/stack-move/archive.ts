@@ -10,6 +10,7 @@
  * folder under the stacks directory (which has the same path on the host and in Dockge).
  */
 import fs from "fs";
+import path from "path";
 import { createHash } from "crypto";
 import childProcessAsync from "promisify-child-process";
 
@@ -17,13 +18,21 @@ import childProcessAsync from "promisify-child-process";
 export const HELPER_IMAGE = "debian:bookworm-slim";
 const GNU_TAR_EXTRAS = [ "--acls", "--xattrs", "--xattrs-include=*" ];
 
+/**
+ * On Windows use the system bsdtar: it handles drive-letter paths and gzip itself, unlike the
+ * GNU tar that Git for Windows puts on the PATH (which reads "C:" as a remote host).
+ */
+const TAR = process.platform === "win32"
+    ? path.join(process.env.SystemRoot || "C:\\Windows", "System32", "tar.exe")
+    : "tar";
+
 let gnuTar : boolean | undefined;
 
 /** Whether the local `tar` is GNU tar (Linux, the Dockge image) or bsdtar (macOS, Windows) */
 export async function hasGnuTar() : Promise<boolean> {
     if (gnuTar === undefined) {
         try {
-            const res = await childProcessAsync.spawn("tar", [ "--version" ], { encoding: "utf-8" });
+            const res = await childProcessAsync.spawn(TAR, [ "--version" ], { encoding: "utf-8" });
             gnuTar = /GNU tar/.test((res.stdout ?? "").toString());
         } catch (e) {
             gnuTar = false;
@@ -54,12 +63,12 @@ export async function run(command : string, args : string[], cwd? : string) : Pr
 /** Pack `<stacksDir>/<name>` into `outFile` (entries start with `<name>/`), minus `exclude` paths inside it */
 export async function packFolder(stacksDir : string, name : string, outFile : string, exclude : string[] = []) {
     const excludeArgs = exclude.map((e) => `--exclude=${name}/${e}`);
-    await run("tar", [ "-czpf", outFile, "--numeric-owner", ...(await localTarExtras()), ...excludeArgs, "-C", stacksDir, name ]);
+    await run(TAR, [ "-czpf", outFile, "--numeric-owner", ...(await localTarExtras()), ...excludeArgs, "-C", stacksDir, name ]);
 }
 
 /** Make sure every entry in a stack archive stays inside `<name>/` */
 export async function verifyFolderArchive(file : string, name : string) {
-    const list = await run("tar", [ "-tzf", file ]);
+    const list = await run(TAR, [ "-tzf", file ]);
     for (const entry of list.split("\n").map((l) => l.trim()).filter(Boolean)) {
         const clean = entry.replace(/^\.\//, "");
         if (!(clean === name || clean === name + "/" || clean.startsWith(name + "/")) || clean.split("/").includes("..")) {
@@ -69,7 +78,7 @@ export async function verifyFolderArchive(file : string, name : string) {
 }
 
 export async function unpackFolder(file : string, stacksDir : string) {
-    await run("tar", [ "-xzpf", file, "--same-owner", "--numeric-owner", ...(await localTarExtras()), "-C", stacksDir ]);
+    await run(TAR, [ "-xzpf", file, "--same-owner", "--numeric-owner", ...(await localTarExtras()), "-C", stacksDir ]);
 }
 
 /** Export a named volume to `<dir>/<fileName>` through the helper container */
