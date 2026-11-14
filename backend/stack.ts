@@ -11,7 +11,7 @@ import {
     CREATED_FILE,
     CREATED_STACK,
     EXITED, getCombinedTerminalName,
-    getComposeTerminalName, getContainerExecTerminalName,
+    getComposeTerminalName, getContainerExecTerminalName, LooseObject,
     PROGRESS_TERMINAL_ROWS,
     RUNNING, TERMINAL_ROWS,
     UNKNOWN
@@ -99,6 +99,48 @@ export class Stack {
         });
         if (!res.stdout) {
             return {};
+        }
+        return JSON.parse(res.stdout.toString());
+    }
+
+    /**
+     * Get the fully resolved compose config (variables from .env / global.env substituted)
+     * via `docker compose config`. Works for stacks not managed by Dockge too, as long as
+     * their compose files are readable.
+     */
+    async getResolvedConfig() : Promise<LooseObject | null> {
+        let args : string[];
+        let cwd : string;
+
+        if (this.isManagedByDockge) {
+            args = this.getComposeOptions("config", "--format", "json");
+            cwd = this.path;
+        } else if (this._configFilePath) {
+            const files = this._configFilePath.split(",").map((f) => f.trim()).filter((f) => f);
+            if (files.length === 0) {
+                return null;
+            }
+            args = [ "compose", "-p", this.name ];
+            for (const file of files) {
+                args.push("-f", file);
+            }
+            args.push("config", "--format", "json");
+            cwd = path.dirname(files[0]);
+            if (!await fileExists(cwd)) {
+                return null;
+            }
+        } else {
+            return null;
+        }
+
+        const res = await childProcessAsync.spawn("docker", args, {
+            cwd,
+            encoding: "utf-8",
+            maxBuffer: 16 * 1024 * 1024,
+        });
+
+        if (!res.stdout) {
+            return null;
         }
         return JSON.parse(res.stdout.toString());
     }
@@ -414,7 +456,6 @@ export class Stack {
             }
             options.splice(1, 0, "--env-file", "../global.env");
         }
-        console.log(options);
         return options;
     }
 

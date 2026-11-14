@@ -18,6 +18,7 @@ import {
 import { passwordStrength } from "check-password-strength";
 import jwt from "jsonwebtoken";
 import { Settings } from "../settings";
+import { ImageUpdateChecker } from "../image-update-checker";
 import fs, { promises as fsAsync } from "fs";
 import path from "path";
 
@@ -290,6 +291,7 @@ export class MainSocketHandler extends SocketHandler {
                 delete data.globalENV;
 
                 await Settings.setSettings("general", data);
+                ImageUpdateChecker.reschedule();
 
                 callback({
                     ok: true,

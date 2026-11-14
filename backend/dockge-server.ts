@@ -37,6 +37,7 @@ import { AgentSocketHandler } from "./agent-socket-handler";
 import { AgentSocket } from "../common/agent-socket";
 import { ManageAgentSocketHandler } from "./socket-handlers/manage-agent-socket-handler";
 import { Terminal } from "./terminal";
+import { ImageUpdateChecker } from "./image-update-checker";
 
 export class DockgeServer {
     app : Express;
@@ -404,6 +405,7 @@ export class DockgeServer {
             });
 
             checkVersion.startInterval();
+            ImageUpdateChecker.start(this);
         });
 
         gracefulShutdown(this.httpServer, {
@@ -604,7 +606,10 @@ export class DockgeServer {
                 let map : Map<string, object> = new Map();
 
                 for (let [ stackName, stack ] of stackList) {
-                    map.set(stackName, stack.toSimpleJSON(dockgeSocket.endpoint));
+                    map.set(stackName, {
+                        ...stack.toSimpleJSON(dockgeSocket.endpoint),
+                        imageUpdateCount: ImageUpdateChecker.getStackUpdateCount(stackName),
+                    });
                 }
 
                 log.debug("server", "Send stack list to user: " + dockgeSocket.id + " (" + dockgeSocket.endpoint + ")");
@@ -681,6 +686,7 @@ export class DockgeServer {
 
         // TODO: Close all terminals?
 
+        ImageUpdateChecker.stop();
         await Database.close();
         Settings.stopCacheCleaner();
     }

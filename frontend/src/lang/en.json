@@ -148,5 +148,22 @@
     "rmCode": "rm",
     "rmRfCode": "rm -rf",
     "envVarCode": "DOCKGE_ENABLE_CONSOLE=true",
-    "confirmLeaveStack": "You are currently editing a stack. Are you sure you want to leave?"
+    "confirmLeaveStack": "You are currently editing a stack. Are you sure you want to leave?",
+    "imageUpdates": "Image Updates",
+    "imageUpdateAvailable": "Update available",
+    "imageDigestUpdateTitle": "The \"{tag}\" tag now points to a newer image than the one pulled",
+    "newTags": "New tags",
+    "andMore": "+{n} more",
+    "showLess": "Show less",
+    "imageUpdateCheckFailed": "Update check failed",
+    "checkImageUpdates": "Check for updates",
+    "imageUpdatesLastChecked": "Images checked {time}",
+    "imageUpdatesNeverChecked": "Images not checked yet",
+    "imageUpdateCheckDone": "Image update check finished",
+    "stackHasImageUpdates": "{n} service(s) with image updates",
+    "imageUpdateCheckSetting": "Check registries for image updates periodically",
+    "imageUpdateCheckInterval": "Interval (hours)",
+    "checkAllImageUpdates": "Check all stacks now",
+    "imageUpdateWatchTagsSetting": "List newer tags for all services (otherwise only for services labelled dockge.update.watch_tags=true)",
+    "imageUpdateCheckHelp": "Looks for a newer image behind each service's current tag and, if enabled, for newer tags of the same form (e.g. 1.2.3-alpine → 1.2.4-alpine). Per service, use the labels dockge.update.enable=false, dockge.update.watch_tags=true|false, dockge.update.include_tags and dockge.update.exclude_tags (regexes, separated by ;). diun.* labels (including diun.watch_repo) work too."
 }

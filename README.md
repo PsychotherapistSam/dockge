@@ -17,6 +17,7 @@ View Video: https://youtu.be/AWAlOQeNpgU?t=48
 - 🧑‍💼 Manage your `compose.yaml` files
   - Create/Edit/Start/Stop/Restart/Delete
   - Update Docker Images
+  - Check registries for image updates and newer tags (see [Image Update Check](#image-update-check))
 - ⌨️ Interactive Editor for `compose.yaml`
 - 🦦 Interactive Web Terminal
 - 🕷️ (1.4.0 🆕) Multiple agents support - You can manage multiple stacks from different Docker hosts in one single interface
@@ -126,6 +127,30 @@ services:
       - PUID=1000 # Set the stack file/dir ownership to this user
       - PGID=1000 # Set the stack file/dir ownership to this group
 ```
+
+## Image Update Check
+
+Dockge periodically asks each image's registry (Docker Hub, GHCR, lscr.io, quay.io, or any registry speaking the Registry v2 API) whether:
+
+- the tag a service uses now points to a newer image than the one pulled (e.g. `latest` was re-pushed), and
+- (opt-in) there are newer tags of the same form (e.g. `1.2.3-alpine` → `1.2.4-alpine`, `4.0.1-ls220` → `4.0.2-ls221`). Tags like `latest` or `stable` only get the first check.
+
+Nothing is pulled. Manifest and tag lookups don't count against Docker Hub's pull rate limit. Stacks with updates get an icon in the stack list, and each container shows what's new. Enable or disable the check, set the interval (default 6 hours), list newer tags for every service by default, or run it now under Settings → General. The stack page has its own "Check for updates" button.
+
+Per service, use labels (the equivalent `diun.*` labels work too, `diun.watch_repo` for `watch_tags`):
+
+```yaml
+services:
+  app:
+    image: postgres:16.4
+    labels:
+      dockge.update.enable: "false"              # skip this service
+      dockge.update.watch_tags: "true"           # list newer tags (overrides the global setting)
+      dockge.update.include_tags: '^16\.\d+$'    # only consider tags matching (regexes, separated by ;)
+      dockge.update.exclude_tags: "rc;beta"      # ignore tags matching (regexes, separated by ;)
+```
+
+Private registries use the credentials from `docker login`, read from `~/.docker/config.json` (or `$DOCKER_CONFIG`). Credential helpers are not supported.
 
 ## How to Update
 

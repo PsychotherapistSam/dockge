@@ -121,6 +121,18 @@
                         </button>
                     </div>
 
+                    <div v-if="!isEditMode && !isAdd" class="image-update-bar mb-3">
+                        <span v-if="imageUpdates">{{ $t("imageUpdatesLastChecked", { time: imageUpdatesCheckedAgo }) }}</span>
+                        <span v-else>{{ $t("imageUpdatesNeverChecked") }}</span>
+                        <span v-if="imageUpdates?.error" class="text-danger ms-2" :title="imageUpdates.error">
+                            <font-awesome-icon icon="exclamation-circle" />
+                        </span>
+                        <button class="btn btn-sm btn-normal ms-2" :disabled="checkingImageUpdates" @click="checkImageUpdates">
+                            <font-awesome-icon icon="arrows-rotate" :spin="checkingImageUpdates" class="me-1" />
+                            {{ $t("checkImageUpdates") }}
+                        </button>
+                    </div>
+
                     <div ref="containerList">
                         <Container
                             v-for="(service, name) in jsonConfig.services"
@@ -130,6 +142,7 @@
                             :first="name === Object.keys(jsonConfig.services)[0]"
                             :serviceStatus="serviceStatusList[name]"
                             :dockerStats="dockerStats"
+                            :image-update="imageUpdates?.services?.[name] ?? null"
                             @start-service="startService"
                             @stop-service="stopService"
                             @restart-service="restartService"
@@ -267,6 +280,7 @@ import { BModal } from "bootstrap-vue-next";
 import NetworkInput from "../components/NetworkInput.vue";
 import dotenv from "dotenv";
 import { ref } from "vue";
+import dayjs from "dayjs";
 
 const template = `
 services:
@@ -344,6 +358,8 @@ export default {
             newContainerName: "",
             stopServiceStatusTimeout: false,
             stopDockerStatsTimeout: false,
+            imageUpdates: null,
+            checkingImageUpdates: false,
         };
     },
     computed: {
@@ -392,6 +408,10 @@ export default {
 
         status() {
             return this.globalStack?.status;
+        },
+
+        imageUpdatesCheckedAgo() {
+            return this.imageUpdates ? dayjs(this.imageUpdates.checkedAt).fromNow() : "";
         },
 
         active() {
@@ -466,6 +486,11 @@ export default {
                 }
             },
             deep: true,
+        },
+
+        // A background check finished (the stack list carries the update count), refresh the details
+        "globalStack.imageUpdateCount"() {
+            this.requestImageUpdates();
         },
 
         $route(to, from) {
@@ -546,6 +571,29 @@ export default {
             });
         },
 
+        requestImageUpdates() {
+            if (this.isAdd || !this.stack.name) {
+                return;
+            }
+            this.$root.emitAgent(this.endpoint, "getImageUpdates", this.stack.name, (res) => {
+                if (res.ok) {
+                    this.imageUpdates = res.imageUpdates;
+                }
+            });
+        },
+
+        checkImageUpdates() {
+            this.checkingImageUpdates = true;
+            this.$root.emitAgent(this.endpoint, "checkImageUpdates", this.stack.name, (res) => {
+                this.checkingImageUpdates = false;
+                if (res.ok) {
+                    this.imageUpdates = res.imageUpdates;
+                } else {
+                    this.$root.toastRes(res);
+                }
+            });
+        },
+
         requestDockerStats() {
             this.$root.emitAgent(this.endpoint, "dockerStats", (res) => {
                 if (res.ok) {
@@ -595,6 +643,7 @@ export default {
                     this.yamlCodeChange();
                     this.processing = false;
                     this.bindTerminal();
+                    this.requestImageUpdates();
                 } else {
                     this.$root.toastRes(res);
                 }

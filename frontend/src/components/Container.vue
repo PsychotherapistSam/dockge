@@ -6,6 +6,24 @@
                 <div class="image mb-2">
                     <span class="me-1">{{ imageName }}:</span><span class="tag">{{ imageTag }}</span>
                 </div>
+                <div v-if="imageUpdate && !isEditMode && hasImageUpdateInfo" class="image-update mb-2">
+                    <span
+                        v-if="imageUpdate.digestUpdate"
+                        class="badge bg-warning text-dark me-1"
+                        :title="$t('imageDigestUpdateTitle', { tag: imageTag })"
+                    >
+                        <font-awesome-icon icon="arrow-alt-circle-up" class="me-1" />{{ $t("imageUpdateAvailable") }}
+                    </span>
+                    <template v-if="imageUpdate.newTags.length > 0">
+                        <span class="me-1">{{ $t("newTags") }}:</span>
+                        <span v-for="tag in visibleNewTags" :key="tag" class="badge new-tag me-1">{{ tag }}</span>
+                        <a v-if="!showAllTags && hiddenTagCount > 0" href="#" @click.prevent="showAllTags = true">{{ $t("andMore", { n: hiddenTagCount }) }}</a>
+                        <a v-else-if="showAllTags" href="#" @click.prevent="showAllTags = false">{{ $t("showLess") }}</a>
+                    </template>
+                    <span v-if="imageUpdate.status === 'error'" class="text-danger" :title="imageUpdate.message">
+                        <font-awesome-icon icon="exclamation-circle" class="me-1" />{{ $t("imageUpdateCheckFailed") }}
+                    </span>
+                </div>
                 <div v-if="!isEditMode">
                     <span class="badge me-1" :class="bgStyle">{{ status }}</span>
 
@@ -220,6 +238,10 @@ export default defineComponent({
         dockerStats: {
             type: Object,
             default: null
+        },
+        imageUpdate: {
+            type: Object,
+            default: null
         }
     },
     emits: [
@@ -231,9 +253,22 @@ export default defineComponent({
         return {
             showConfig: false,
             expandedStats: false,
+            showAllTags: false,
         };
     },
     computed: {
+
+        hasImageUpdateInfo() {
+            return this.imageUpdate.digestUpdate || this.imageUpdate.newTags.length > 0 || this.imageUpdate.status === "error";
+        },
+
+        visibleNewTags() {
+            return this.showAllTags ? this.imageUpdate.newTags : this.imageUpdate.newTags.slice(0, 5);
+        },
+
+        hiddenTagCount() {
+            return this.imageUpdate.newTagCount - this.visibleNewTags.length;
+        },
 
         networkList() {
             let list = [];
@@ -392,6 +427,16 @@ export default defineComponent({
         color: #6c757d;
         .tag {
             color: #33383b;
+        }
+    }
+
+    .image-update {
+        font-size: 0.8rem;
+        color: #6c757d;
+
+        .new-tag {
+            background-color: $primary;
+            color: $dark-font-color2;
         }
     }
 

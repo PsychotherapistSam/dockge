@@ -4,6 +4,12 @@
         <div class="title">
             <span>{{ stackName }}</span>
         </div>
+        <font-awesome-icon
+            v-if="stack.imageUpdateCount > 0"
+            icon="arrow-alt-circle-up"
+            class="image-update-icon ms-auto"
+            :title="$t('stackHasImageUpdates', { n: stack.imageUpdateCount })"
+        />
     </router-link>
 </template>
 
@@ -175,6 +181,11 @@ export default {
 
 .dim {
     opacity: 0.5;
+}
+
+.image-update-icon {
+    color: $warning;
+    flex-shrink: 0;
 }
 
 </style>

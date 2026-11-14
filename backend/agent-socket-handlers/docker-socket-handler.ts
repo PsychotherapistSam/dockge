@@ -3,6 +3,7 @@ import { DockgeServer } from "../dockge-server";
 import { callbackError, callbackResult, checkLogin, DockgeSocket, ValidationError } from "../util-server";
 import { Stack } from "../stack";
 import { AgentSocket } from "../../common/agent-socket";
+import { ImageUpdateChecker } from "../image-update-checker";
 
 export class DockerSocketHandler extends AgentSocketHandler {
     create(socket : DockgeSocket, server : DockgeServer, agentSocket : AgentSocket) {
@@ -14,6 +15,7 @@ export class DockerSocketHandler extends AgentSocketHandler {
                 const stack = await this.saveStack(server, name, composeYAML, composeENV, isAdd);
                 await stack.deploy(socket);
                 server.sendStackList();
+                ImageUpdateChecker.checkStack(server, stack).catch(() => {});
                 callbackResult({
                     ok: true,
                     msg: "Deployed",
@@ -187,12 +189,14 @@ export class DockerSocketHandler extends AgentSocketHandler {
 
                 const stack = await Stack.getStack(server, stackName);
                 await stack.update(socket);
+                ImageUpdateChecker.markPulled(server, stackName);
                 callbackResult({
                     ok: true,
                     msg: "Updated",
                     msgi18n: true,
                 }, callback);
                 server.sendStackList();
+                ImageUpdateChecker.checkStack(server, stack).catch(() => {});
             } catch (e) {
                 callbackError(e, callback);
             }
@@ -312,6 +316,55 @@ export class DockerSocketHandler extends AgentSocketHandler {
                 callbackResult({
                     ok: true,
                     msg: "Service " + serviceName + " restarted"
+                }, callback);
+            } catch (e) {
+                callbackError(e, callback);
+            }
+        });
+
+        // Image updates: cached result of the last check for a stack
+        agentSocket.on("getImageUpdates", async (stackName : unknown, callback) => {
+            try {
+                checkLogin(socket);
+
+                if (typeof(stackName) !== "string") {
+                    throw new ValidationError("Stack name must be a string");
+                }
+
+                callbackResult({
+                    ok: true,
+                    imageUpdates: ImageUpdateChecker.results.get(stackName) ?? null,
+                    checking: ImageUpdateChecker.checking,
+                }, callback);
+            } catch (e) {
+                callbackError(e, callback);
+            }
+        });
+
+        // Image updates: check now, for one stack or (with null) all stacks
+        agentSocket.on("checkImageUpdates", async (stackName : unknown, callback) => {
+            try {
+                checkLogin(socket);
+
+                if (stackName === null) {
+                    await ImageUpdateChecker.checkAll(server);
+                    callbackResult({
+                        ok: true,
+                        msg: "imageUpdateCheckDone",
+                        msgi18n: true,
+                    }, callback);
+                    return;
+                }
+
+                if (typeof(stackName) !== "string") {
+                    throw new ValidationError("Stack name must be a string");
+                }
+
+                const stack = await Stack.getStack(server, stackName);
+                const imageUpdates = await ImageUpdateChecker.checkStack(server, stack);
+                callbackResult({
+                    ok: true,
+                    imageUpdates,
                 }, callback);
             } catch (e) {
                 callbackError(e, callback);

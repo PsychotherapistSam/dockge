@@ -57,6 +57,28 @@
                 <div class="form-text"></div>
             </div>
 
+            <!-- Image update check -->
+            <div class="mb-4">
+                <label class="form-label">{{ $t("imageUpdates") }}</label>
+                <div class="form-check form-switch mb-2">
+                    <input id="imageUpdateCheck" v-model="imageUpdateCheckEnabled" class="form-check-input" type="checkbox">
+                    <label class="form-check-label" for="imageUpdateCheck">{{ $t("imageUpdateCheckSetting") }}</label>
+                </div>
+                <div v-if="imageUpdateCheckEnabled" class="form-check form-switch mb-2">
+                    <input id="imageUpdateWatchTags" v-model="settings.imageUpdateWatchTags" class="form-check-input" type="checkbox">
+                    <label class="form-check-label" for="imageUpdateWatchTags">{{ $t("imageUpdateWatchTagsSetting") }}</label>
+                </div>
+                <div v-if="imageUpdateCheckEnabled" class="input-group mb-2" style="max-width: 360px;">
+                    <span class="input-group-text">{{ $t("imageUpdateCheckInterval") }}</span>
+                    <input v-model.number="imageUpdateCheckInterval" type="number" min="0.25" step="0.25" class="form-control">
+                </div>
+                <button class="btn btn-normal btn-sm" type="button" :disabled="checkingAll" @click="checkAllNow">
+                    <font-awesome-icon icon="arrows-rotate" :spin="checkingAll" class="me-1" />
+                    {{ $t("checkAllImageUpdates") }}
+                </button>
+                <div class="form-text">{{ $t("imageUpdateCheckHelp") }}</div>
+            </div>
+
             <!-- Save Button -->
             <div>
                 <button class="btn btn-primary" type="submit">
@@ -80,6 +102,7 @@ export default {
     data() {
         return {
             timezoneList: timezoneList(),
+            checkingAll: false,
         };
     },
 
@@ -95,7 +118,24 @@ export default {
         },
         guessTimezone() {
             return dayjs.tz.guess();
-        }
+        },
+        // Enabled unless explicitly turned off
+        imageUpdateCheckEnabled: {
+            get() {
+                return this.settings.imageUpdateCheck !== false;
+            },
+            set(value) {
+                this.settings.imageUpdateCheck = value;
+            },
+        },
+        imageUpdateCheckInterval: {
+            get() {
+                return this.settings.imageUpdateCheckInterval ?? 6;
+            },
+            set(value) {
+                this.settings.imageUpdateCheckInterval = value;
+            },
+        },
     },
 
     methods: {
@@ -103,6 +143,14 @@ export default {
         saveGeneral() {
             localStorage.timezone = this.$root.userTimezone;
             this.saveSettings();
+        },
+        /** Run the image update check for every stack on this server now */
+        checkAllNow() {
+            this.checkingAll = true;
+            this.$root.emitAgent("", "checkImageUpdates", null, (res) => {
+                this.checkingAll = false;
+                this.$root.toastRes(res);
+            });
         },
         /** Get the base URL of the application */
         autoGetPrimaryHostname() {
