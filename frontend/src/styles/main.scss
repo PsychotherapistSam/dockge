@@ -337,6 +337,7 @@ hr {
     }
 
     > .btn:first-child,
+    > .btn-check:first-child + .btn,
     > :first-child .btn {
         border-top-left-radius: 10px;
         border-bottom-left-radius: 10px;

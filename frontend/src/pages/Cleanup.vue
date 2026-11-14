@@ -41,10 +41,10 @@
 
         <div v-if="preview" class="groups">
             <!-- Stopped containers -->
-            <section class="group" :class="{ off: !options.containers }">
+            <section class="group" :class="{ off: !active.containers }">
                 <header class="group-head">
                     <div class="form-check form-switch">
-                        <input id="g-containers" v-model="options.containers" class="form-check-input" type="checkbox" role="switch" :disabled="preview.containers.length === 0" @change="load">
+                        <input id="g-containers" :checked="active.containers" class="form-check-input" type="checkbox" role="switch" :disabled="preview.containers.length === 0" @change="options.containers = $event.target.checked; load()">
                     </div>
                     <label for="g-containers" class="group-title">{{ $t("cleanupContainers") }}</label>
                     <span class="group-figure mono">{{ preview.containers.length }}</span>
@@ -65,13 +65,13 @@
             </section>
 
             <!-- Images -->
-            <section class="group" :class="{ off: options.images === 'none' }">
+            <section class="group" :class="{ off: !active.images }">
                 <header class="group-head">
                     <div class="form-check form-switch">
-                        <input id="g-images" :checked="options.images !== 'none'" class="form-check-input" type="checkbox" role="switch" :disabled="preview.images.length === 0" @change="options.images = $event.target.checked ? 'dangling' : 'none'">
+                        <input id="g-images" :checked="active.images" class="form-check-input" type="checkbox" role="switch" :disabled="preview.images.length === 0" @change="options.images = $event.target.checked ? 'dangling' : 'none'">
                     </div>
                     <label for="g-images" class="group-title">{{ $t("cleanupImages") }}</label>
-                    <div v-if="options.images !== 'none'" class="btn-group mode" role="group" :aria-label="$t('cleanupImages')">
+                    <div v-if="active.images" class="btn-group mode" role="group" :aria-label="$t('cleanupImages')">
                         <input id="mode-dangling" v-model="options.images" type="radio" class="btn-check" value="dangling" autocomplete="off">
                         <label class="btn btn-outline-primary btn-sm" for="mode-dangling">{{ $t("cleanupDangling") }} <span class="mono">{{ danglingImages.length }}</span></label>
                         <input id="mode-all" v-model="options.images" type="radio" class="btn-check" value="all" autocomplete="off">
@@ -98,10 +98,10 @@
             </section>
 
             <!-- Networks -->
-            <section class="group" :class="{ off: !options.networks }">
+            <section class="group" :class="{ off: !active.networks }">
                 <header class="group-head">
                     <div class="form-check form-switch">
-                        <input id="g-networks" v-model="options.networks" class="form-check-input" type="checkbox" role="switch" :disabled="preview.networks.length === 0">
+                        <input id="g-networks" :checked="active.networks" class="form-check-input" type="checkbox" role="switch" :disabled="preview.networks.length === 0" @change="options.networks = $event.target.checked">
                     </div>
                     <label for="g-networks" class="group-title">{{ $t("cleanupNetworks") }}</label>
                     <span class="group-figure mono">{{ preview.networks.length }}</span>
@@ -120,10 +120,10 @@
             </section>
 
             <!-- Build cache -->
-            <section class="group" :class="{ off: !options.buildCache }">
+            <section class="group" :class="{ off: !active.buildCache }">
                 <header class="group-head">
                     <div class="form-check form-switch">
-                        <input id="g-cache" v-model="options.buildCache" class="form-check-input" type="checkbox" role="switch" :disabled="preview.buildCache.count === 0">
+                        <input id="g-cache" :checked="active.buildCache" class="form-check-input" type="checkbox" role="switch" :disabled="preview.buildCache.count === 0" @change="options.buildCache = $event.target.checked">
                     </div>
                     <label for="g-cache" class="group-title">{{ $t("cleanupBuildCache") }}</label>
                     <span class="group-figure mono">{{ formatBytes(preview.buildCache.reclaimable) }}</span>
@@ -132,10 +132,10 @@
             </section>
 
             <!-- Volumes, off by default -->
-            <section class="group danger" :class="{ off: !options.volumes }">
+            <section class="group danger" :class="{ off: !active.volumes }">
                 <header class="group-head">
                     <div class="form-check form-switch">
-                        <input id="g-volumes" v-model="options.volumes" class="form-check-input" type="checkbox" role="switch" :disabled="!preview.volumesSupported || preview.volumes.length === 0">
+                        <input id="g-volumes" :checked="active.volumes" class="form-check-input" type="checkbox" role="switch" :disabled="!preview.volumesSupported || preview.volumes.length === 0" @change="options.volumes = $event.target.checked">
                     </div>
                     <label for="g-volumes" class="group-title">{{ $t("cleanupVolumes") }}</label>
                     <span class="group-figure mono">{{ formatBytes(volumeBytes) }}</span>
@@ -174,11 +174,11 @@
         <BModal v-model="showConfirm" :title="$t('cleanupConfirmTitle')" :cancelTitle="$t('cancel')" :okTitle="$t('cleanupRun')" okVariant="danger" @ok="prune">
             <p>{{ $t("cleanupConfirmIntro") }}</p>
             <ul class="confirm-list">
-                <li v-if="options.containers && preview?.containers.length">{{ $t("cleanupConfirmContainers", { n: preview.containers.length }) }}</li>
-                <li v-if="options.images !== 'none' && shownImages.length">{{ $t("cleanupConfirmImages", { n: shownImages.length, size: formatBytes(imageBytes) }) }}</li>
-                <li v-if="options.networks && preview?.networks.length">{{ $t("cleanupConfirmNetworks", { n: preview.networks.length }) }}</li>
-                <li v-if="options.buildCache && preview?.buildCache.count">{{ $t("cleanupConfirmCache", { size: formatBytes(preview.buildCache.reclaimable) }) }}</li>
-                <li v-if="options.volumes && preview?.volumes.length" class="text-danger">{{ $t("cleanupConfirmVolumes", { n: preview.volumes.length }) }}</li>
+                <li v-if="active.containers">{{ $t("cleanupConfirmContainers", { n: preview.containers.length }) }}</li>
+                <li v-if="active.images && shownImages.length">{{ $t("cleanupConfirmImages", { n: shownImages.length, size: formatBytes(imageBytes) }) }}</li>
+                <li v-if="active.networks">{{ $t("cleanupConfirmNetworks", { n: preview.networks.length }) }}</li>
+                <li v-if="active.buildCache">{{ $t("cleanupConfirmCache", { size: formatBytes(preview.buildCache.reclaimable) }) }}</li>
+                <li v-if="active.volumes" class="text-danger">{{ $t("cleanupConfirmVolumes", { n: preview.volumes.length }) }}</li>
             </ul>
             <p v-if="affectedStacks.length > 0" class="confirm-warning">
                 <font-awesome-icon icon="exclamation-circle" />
@@ -220,12 +220,27 @@ export default {
     },
 
     computed: {
+        /** What actually gets pruned: a group with nothing to remove counts as off */
+        active() {
+            const p = this.preview;
+            if (!p) {
+                return {};
+            }
+            return {
+                containers: this.options.containers && p.containers.length > 0,
+                images: this.options.images !== "none" && p.images.length > 0,
+                networks: this.options.networks && p.networks.length > 0,
+                buildCache: this.options.buildCache && p.buildCache.count > 0,
+                volumes: this.options.volumes && p.volumesSupported && p.volumes.length > 0,
+            };
+        },
+
         danglingImages() {
             return this.preview?.images.filter((i) => i.dangling) ?? [];
         },
 
         shownImages() {
-            if (!this.preview || this.options.images === "none") {
+            if (!this.preview || !this.active.images) {
                 return [];
             }
             return this.options.images === "all" ? this.preview.images : this.danglingImages;
@@ -243,11 +258,11 @@ export default {
             if (!this.preview) {
                 return 0;
             }
-            let total = this.options.images !== "none" ? this.imageBytes : 0;
-            if (this.options.buildCache) {
+            let total = this.imageBytes;
+            if (this.active.buildCache) {
                 total += this.preview.buildCache.reclaimable;
             }
-            if (this.options.volumes) {
+            if (this.active.volumes) {
                 total += this.volumeBytes;
             }
             return total;
@@ -257,16 +272,16 @@ export default {
             if (!this.preview) {
                 return 0;
             }
-            return (this.options.containers ? this.preview.containers.length : 0)
+            return (this.active.containers ? this.preview.containers.length : 0)
                 + this.shownImages.length
-                + (this.options.networks ? this.preview.networks.length : 0)
-                + (this.options.buildCache ? this.preview.buildCache.count : 0)
-                + (this.options.volumes ? this.preview.volumes.length : 0);
+                + (this.active.networks ? this.preview.networks.length : 0)
+                + (this.active.buildCache ? this.preview.buildCache.count : 0)
+                + (this.active.volumes ? this.preview.volumes.length : 0);
         },
 
         /** Stopped stacks whose containers go, they start again but may pull images */
         affectedStacks() {
-            if (!this.preview || !this.options.containers) {
+            if (!this.preview || !this.active.containers) {
                 return [];
             }
             return [ ...new Set(this.preview.containers.map((c) => c.stack).filter(Boolean)) ];
@@ -285,9 +300,6 @@ export default {
                 this.loading = false;
                 if (res.ok) {
                     this.preview = res.preview;
-                    if (this.preview.volumes.length === 0 || !this.preview.volumesSupported) {
-                        this.options.volumes = false;
-                    }
                 } else {
                     this.error = res.msg;
                 }
@@ -297,7 +309,14 @@ export default {
         prune() {
             this.pruning = true;
             this.result = null;
-            this.$root.emitAgent(this.endpoint, "cleanupPrune", { ...this.options }, (res) => {
+            const options = {
+                containers: this.active.containers,
+                networks: this.active.networks,
+                images: this.active.images ? this.options.images : "none",
+                buildCache: this.active.buildCache,
+                volumes: this.active.volumes,
+            };
+            this.$root.emitAgent(this.endpoint, "cleanupPrune", options, (res) => {
                 this.pruning = false;
                 if (res.ok) {
                     const total = res.steps.reduce((sum, s) => sum + s.reclaimed, 0);
