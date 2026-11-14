@@ -19,6 +19,7 @@ import { passwordStrength } from "check-password-strength";
 import jwt from "jsonwebtoken";
 import { Settings } from "../settings";
 import { ImageUpdateChecker } from "../image-update-checker";
+import { RegistryLogins } from "../registry-logins";
 import fs, { promises as fsAsync } from "fs";
 import path from "path";
 
@@ -237,6 +238,53 @@ export class MainSocketHandler extends SocketHandler {
                         msg: e.message,
                     });
                 }
+            }
+        });
+
+        // Registry logins
+        socket.on("getRegistryLogins", async (callback) => {
+            try {
+                checkLogin(socket);
+                callback({
+                    ok: true,
+                    ...RegistryLogins.list(),
+                });
+            } catch (e) {
+                callbackError(e, callback);
+            }
+        });
+
+        socket.on("registryLogin", async (registry : unknown, username : unknown, password : unknown, callback) => {
+            try {
+                checkLogin(socket);
+                if (typeof registry !== "string" || typeof username !== "string" || typeof password !== "string") {
+                    throw new ValidationError("Registry, username and password must be strings");
+                }
+                await RegistryLogins.login(registry, username, password);
+                callback({
+                    ok: true,
+                    msg: "registrySignedIn",
+                    msgi18n: true,
+                });
+            } catch (e) {
+                callbackError(e, callback);
+            }
+        });
+
+        socket.on("registryLogout", async (server : unknown, callback) => {
+            try {
+                checkLogin(socket);
+                if (typeof server !== "string") {
+                    throw new ValidationError("Server must be a string");
+                }
+                await RegistryLogins.logout(server);
+                callback({
+                    ok: true,
+                    msg: "registrySignedOut",
+                    msgi18n: true,
+                });
+            } catch (e) {
+                callbackError(e, callback);
             }
         });
 

@@ -1,29 +1,30 @@
 <template>
     <div>
-        <h5>{{ $t("Internal Networks") }}</h5>
-        <ul class="list-group">
-            <li v-for="(networkRow, index) in networkList" :key="index" class="list-group-item">
-                <input v-model="networkRow.key" type="text" class="no-bg domain-input" :placeholder="$t(`Network name...`)" />
-                <font-awesome-icon icon="times" class="action remove ms-2 me-3 text-danger" @click="remove(index)" />
-            </li>
-        </ul>
+        <div class="form-label">{{ $t("Internal Networks") }}</div>
+        <div class="list-editor">
+            <div v-for="(networkRow, index) in networkList" :key="index" class="list-editor-row">
+                <input v-model="networkRow.key" type="text" class="form-control" :placeholder="$t(`Network name...`)" :aria-label="$t('Internal Networks')" spellcheck="false" />
+                <button type="button" class="btn-icon list-editor-remove" :title="$t('Remove')" @click="remove(index)">
+                    <font-awesome-icon icon="times" />
+                </button>
+            </div>
+            <button type="button" class="list-editor-add" @click="addField">
+                <font-awesome-icon icon="plus" />
+                {{ $t("addInternalNetwork") }}
+            </button>
+        </div>
 
-        <button class="btn btn-normal btn-sm mt-3 me-2" @click="addField">{{ $t("addInternalNetwork") }}</button>
+        <div class="form-label mt-4">{{ $t("External Networks") }}</div>
 
-        <h5 class="mt-3">{{ $t("External Networks") }}</h5>
-
-        <div v-if="externalNetworkList.length === 0">
+        <div v-if="externalNetworkList.length === 0" class="list-editor-note">
             {{ $t("No External Networks") }}
         </div>
 
-        <div v-for="(networkName, index) in externalNetworkList" :key="networkName" class="form-check form-switch my-3">
+        <div v-for="(networkName, index) in externalNetworkList" :key="networkName" class="form-check form-switch mb-2">
             <input :id=" 'external-network' + index" v-model="selectedExternalList[networkName]" class="form-check-input" type="checkbox">
-
-            <label class="form-check-label" :for=" 'external-network' +index">
+            <label class="form-check-label mono" :for=" 'external-network' +index">
                 {{ networkName }}
             </label>
-
-            <span v-if="false" class="text-danger ms-2 delete">Delete</span>
         </div>
 
         <div v-if="false" class="input-group mb-3">
@@ -193,35 +194,3 @@ export default {
     },
 };
 </script>
-
-<style lang="scss" scoped>
-@import "../styles/vars.scss";
-
-.list-group {
-    background-color: var(--raised);
-
-    li {
-        display: flex;
-        align-items: center;
-        padding: 8px 0 8px 12px;
-
-        .domain-input {
-            flex-grow: 1;
-            background-color: var(--raised);
-            border: none;
-            color: var(--text);
-            outline: none;
-
-            &::placeholder {
-                color: var(--text-3);
-            }
-        }
-    }
-}
-
-.delete {
-    text-decoration: underline;
-    font-size: 13px;
-    cursor: pointer;
-}
-</style>

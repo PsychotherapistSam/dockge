@@ -103,7 +103,7 @@
                     <div class="input-group mb-3">
                         <input
                             v-model="service.image"
-                            class="form-control"
+                            class="form-control mono"
                             list="image-datalist"
                         />
                     </div>

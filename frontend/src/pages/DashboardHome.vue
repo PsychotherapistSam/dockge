@@ -210,7 +210,6 @@ export default {
             return "";
         },
 
-
         addAgent() {
             this.connectingAgent = true;
             this.$root.getSocket().emit("addAgent", this.agent, (res) => {

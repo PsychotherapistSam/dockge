@@ -1,21 +1,25 @@
 <template>
     <div>
-        <div v-if="valid">
-            <ul v-if="isArrayInited" class="list-group">
-                <li v-for="(value, index) in array" :key="index" class="list-group-item">
-                    <select v-model="array[index]" class="no-bg domain-input">
+        <div v-if="valid" class="list-editor">
+            <template v-if="isArrayInited">
+                <div v-for="(value, index) in array" :key="index" class="list-editor-row">
+                    <select v-model="array[index]" class="form-select" :aria-label="displayName">
                         <option value="">{{ $t(`Select a network...`) }}</option>
                         <option v-for="option in options" :key="option" :value="option">{{ option }}</option>
                     </select>
+                    <button type="button" class="btn-icon list-editor-remove" :title="$t('Remove')" @click="remove(index)">
+                        <font-awesome-icon icon="times" />
+                    </button>
+                </div>
+            </template>
 
-                    <font-awesome-icon icon="times" class="action remove ms-2 me-3 text-danger" @click="remove(index)" />
-                </li>
-            </ul>
-
-            <button class="btn btn-normal btn-sm mt-3" @click="addField">{{ $t("addListItem", [ displayName ]) }}</button>
+            <button type="button" class="list-editor-add" @click="addField">
+                <font-awesome-icon icon="plus" />
+                {{ $t("addListItem", [ addLabel ]) }}
+            </button>
         </div>
-        <div v-else>
-            Long syntax is not supported here. Please use the YAML editor.
+        <div v-else class="list-editor-note">
+            {{ $t("LongSyntaxNotSupported") }}
         </div>
     </div>
 </template>
@@ -46,6 +50,15 @@ export default {
         };
     },
     computed: {
+        /** "Port" -> "port" for "Add port", but keep acronyms like "URL" */
+        addLabel() {
+            const name = this.displayName || "";
+            if (name.length > 1 && name === name.toUpperCase()) {
+                return name;
+            }
+            return name.charAt(0).toLowerCase() + name.slice(1);
+        },
+
         array() {
             // Create the array if not exists, it should be safe.
             if (!this.service[this.name]) {
@@ -100,29 +113,3 @@ export default {
     }
 };
 </script>
-
-<style lang="scss" scoped>
-@import "../styles/vars.scss";
-
-.list-group {
-    background-color: var(--raised);
-
-    li {
-        display: flex;
-        align-items: center;
-        padding: 8px 0 8px 12px;
-
-        .domain-input {
-            flex-grow: 1;
-            background-color: var(--raised);
-            border: none;
-            color: var(--text);
-            outline: none;
-
-            &::placeholder {
-                color: var(--text-3);
-            }
-        }
-    }
-}
-</style>

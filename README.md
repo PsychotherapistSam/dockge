@@ -111,8 +111,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/app/data
         
-      # If you want to use private registries, you need to share the auth file with Dockge:
-      # - /root/.docker/:/root/.docker
+      # Private registries: sign in under Settings > Registries.
+      # Logins from a mounted docker config are imported once, e.g.:
+      # - /root/.docker/config.json:/root/.docker/config.json:ro
 
       # Stacks Directory
       # Your stacks directory in the host (The paths inside container must be the same as the host)
@@ -150,7 +151,11 @@ services:
       dockge.update.exclude_tags: "rc;beta"      # ignore tags matching (regexes, separated by ;)
 ```
 
-Private registries use the credentials from `docker login`, read from `~/.docker/config.json` (or `$DOCKER_CONFIG`). Credential helpers are not supported.
+## Private Registries
+
+Sign in under **Settings → Registries**. Dockge runs `docker login` against its own docker config in `data/docker`, so the logins work for pulls, deploys and the image update check, even inside the container and when the host keeps its logins in a credential helper.
+
+Logins that Dockge can see in `~/.docker/config.json` (for example a mounted host config) are imported into its own config once at startup. Credential helpers (`credsStore`, `credHelpers`) are used when they are installed where Dockge runs. Set `DOCKER_CONFIG` to make Dockge use a docker config directory as it is.
 
 ## How to Update
 

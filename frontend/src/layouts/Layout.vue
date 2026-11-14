@@ -1,13 +1,23 @@
 <template>
     <div :class="classes">
-        <div v-if="! $root.socketIO.connected && ! $root.socketIO.firstConnect" class="lost-connection">
-            <div class="container-fluid">
-                {{ $root.socketIO.connectionErrorMsg }}
-                <div v-if="$root.socketIO.showReverseProxyGuide">
-                    {{ $t("reverseProxyMsg1") }} <a href="https://github.com/louislam/uptime-kuma/wiki/Reverse-Proxy" target="_blank">{{ $t("reverseProxyMsg2") }}</a>
+        <transition name="slide-fade-up">
+            <div v-if="! $root.socketIO.connected && ! $root.socketIO.firstConnect" class="lost-connection" role="alert" :title="$root.socketIO.connectionErrorMsg">
+                <font-awesome-icon icon="link-slash" class="lost-connection-icon" />
+                <div class="lost-connection-text">
+                    <div class="lost-connection-title">
+                        {{ $root.socketIO.showReverseProxyGuide ? $t("connectionCannotReach") : $t("connectionLost") }}
+                    </div>
+                    <div class="lost-connection-detail">
+                        <font-awesome-icon icon="spinner" spin />
+                        {{ $t("reconnecting...") }}
+                        <template v-if="$root.socketIO.showReverseProxyGuide">
+                            · {{ $t("reverseProxyMsg1") }}
+                            <a href="https://github.com/louislam/uptime-kuma/wiki/Reverse-Proxy" target="_blank" rel="noopener">{{ $t("reverseProxyMsg2") }}</a>
+                        </template>
+                    </div>
                 </div>
             </div>
-        </div>
+        </transition>
 
         <header class="app-header">
             <router-link to="/" class="brand">
@@ -269,15 +279,53 @@ main {
 
 .lost-connection {
     position: fixed;
-    z-index: 99999;
-    width: 100%;
-    padding: 8px 16px;
-    color: #fff;
-    background-color: var(--err);
+    z-index: 1080;
+    top: 68px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    padding: 12px 16px;
+    color: var(--text);
+    background-color: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--err) 45%, transparent);
+    border-radius: 14px;
+    box-shadow: var(--shadow-float);
 
     a {
-        color: inherit;
+        color: var(--accent-ink);
         text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+
+    &.slide-fade-up-enter-from,
+    &.slide-fade-up-leave-to {
+        transform: translate(-50%, -8px);
+    }
+}
+
+.lost-connection-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--err);
+}
+
+.lost-connection-title {
+    font-weight: 500;
+}
+
+.lost-connection-detail {
+    font-size: 13px;
+    color: var(--text-2);
+
+    svg {
+        width: 12px;
+        margin-right: 4px;
+        color: var(--text-3);
     }
 }
 

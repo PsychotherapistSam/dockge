@@ -93,6 +93,11 @@ export default {
                     description: this.$t("settingsSecurityDescription"),
                     icon: "shield-halved",
                 },
+                registries: {
+                    title: this.$t("registries"),
+                    description: this.$t("settingsRegistriesDescription"),
+                    icon: "key",
+                },
                 globalEnv: {
                     title: this.$t("GlobalEnv"),
                     description: this.$t("settingsGlobalEnvDescription"),

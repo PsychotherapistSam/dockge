@@ -2,10 +2,7 @@
  * Minimal Docker Registry HTTP API v2 client and tag helpers, used by the image update checker.
  * Kept free of server imports so it can be tested on its own.
  */
-import fs from "fs";
-import os from "os";
-import path from "path";
-import { LooseObject } from "../../common/util-common";
+import { DockerCredentials, RegistryCredentials } from "./docker-credentials";
 
 const DOCKER_HUB_REGISTRY = "registry-1.docker.io";
 const REQUEST_TIMEOUT_MS = 15 * 1000;
@@ -136,36 +133,8 @@ export function findNewerTags(current : string, allTags : string[], filter : Tag
     return candidates.sort((a, b) => compareNumbers(tagNumbers(b), tagNumbers(a)) || b.localeCompare(a));
 }
 
-/**
- * Credentials from the docker CLI config (`docker login`). Credential helpers are not supported.
- */
-function loadDockerAuths() : Record<string, string> {
-    const dir = process.env.DOCKER_CONFIG || path.join(os.homedir(), ".docker");
-    try {
-        const config = JSON.parse(fs.readFileSync(path.join(dir, "config.json"), "utf-8"));
-        const auths : Record<string, string> = {};
-        for (const [ key, value ] of Object.entries(config.auths ?? {})) {
-            const auth = (value as LooseObject)?.auth;
-            if (typeof auth === "string" && auth) {
-                auths[key] = auth;
-            }
-        }
-        return auths;
-    } catch (e) {
-        return {};
-    }
-}
-
-function findBasicAuth(auths : Record<string, string>, registry : string) : string | undefined {
-    const keys = registry === DOCKER_HUB_REGISTRY
-        ? [ "https://index.docker.io/v1/", "index.docker.io", "docker.io", "registry-1.docker.io" ]
-        : [ registry, "https://" + registry, "http://" + registry, "https://" + registry + "/v1/", "https://" + registry + "/v2/" ];
-    for (const key of keys) {
-        if (auths[key]) {
-            return auths[key];
-        }
-    }
-    return undefined;
+function displayRegistry(registry : string) : string {
+    return registry === DOCKER_HUB_REGISTRY ? "Docker Hub" : registry;
 }
 
 function parseChallenge(header : string) : { scheme : string, params : Record<string, string> } {
@@ -184,7 +153,9 @@ function parseChallenge(header : string) : { scheme : string, params : Record<st
  */
 export class RegistryClient {
     protected authHeaders = new Map<string, string>();
-    protected dockerAuths = loadDockerAuths();
+    protected credentials = new DockerCredentials();
+    /** Per registry: whether credentials were found and used, for error messages */
+    protected authState = new Map<string, { credentials? : RegistryCredentials, rejected? : boolean }>();
 
     protected baseURL(registry : string) : string {
         // Plain HTTP is only assumed for localhost registries
@@ -218,7 +189,12 @@ export class RegistryClient {
         }
 
         const { scheme, params } = parseChallenge(challenge);
-        const basic = findBasicAuth(this.dockerAuths, ref.registry);
+        const credentials = await this.credentials.get(ref.registry);
+        this.authState.set(ref.registry, { credentials });
+
+        const basic = credentials?.password !== undefined
+            ? Buffer.from(`${credentials.username ?? ""}:${credentials.password}`).toString("base64")
+            : undefined;
 
         if (scheme === "basic") {
             if (!basic) {
@@ -226,23 +202,53 @@ export class RegistryClient {
             }
             this.authHeaders.set(key, "Basic " + basic);
         } else if (scheme === "bearer" && params.realm) {
-            const tokenURL = new URL(params.realm);
-            if (params.service) {
-                tokenURL.searchParams.set("service", params.service);
-            }
-            tokenURL.searchParams.set("scope", params.scope || `repository:${ref.repository}:pull`);
+            const service = params.service;
+            const scope = params.scope || `repository:${ref.repository}:pull`;
+            let tokenRes : Response;
 
-            const tokenRes = await fetch(tokenURL, {
-                headers: basic ? { Authorization: "Basic " + basic } : {},
-                signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-            });
+            if (credentials?.identityToken) {
+                // OAuth2 refresh token flow, as the docker CLI does for identity tokens
+                const body = new URLSearchParams({
+                    grant_type: "refresh_token",
+                    refresh_token: credentials.identityToken,
+                    client_id: "dockge",
+                    scope,
+                });
+                if (service) {
+                    body.set("service", service);
+                }
+                tokenRes = await fetch(params.realm, {
+                    method: "POST",
+                    body,
+                    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+                });
+            } else {
+                const tokenURL = new URL(params.realm);
+                if (service) {
+                    tokenURL.searchParams.set("service", service);
+                }
+                tokenURL.searchParams.set("scope", scope);
+                tokenRes = await fetch(tokenURL, {
+                    headers: basic ? { Authorization: "Basic " + basic } : {},
+                    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+                });
+            }
+
             if (!tokenRes.ok) {
-                throw new Error(`Registry auth failed (HTTP ${tokenRes.status})`);
+                if (credentials && (tokenRes.status === 401 || tokenRes.status === 403)) {
+                    this.authState.set(ref.registry, { credentials,
+                        rejected: true });
+                    throw new Error(`${displayRegistry(ref.registry)} rejected the stored credentials (from ${credentials.source})`);
+                }
+                if (tokenRes.status === 401 || tokenRes.status === 403) {
+                    throw new Error(this.describeFailure(ref, "sign in", tokenRes.status));
+                }
+                throw new Error(`Registry sign-in failed (HTTP ${tokenRes.status})`);
             }
             const data = await tokenRes.json();
             const token = data.token || data.access_token;
             if (!token) {
-                throw new Error("Registry auth returned no token");
+                throw new Error("Registry sign-in returned no token");
             }
             this.authHeaders.set(key, "Bearer " + token);
         } else {
@@ -255,6 +261,27 @@ export class RegistryClient {
         return res;
     }
 
+    /**
+     * Turn an HTTP failure into a message that says what to do about it
+     */
+    protected describeFailure(ref : ImageRef, what : string, status : number) : string {
+        if (status === 401 || status === 403 || (status === 404 && !this.authState.get(ref.registry)?.credentials)) {
+            const state = this.authState.get(ref.registry);
+            const registry = displayRegistry(ref.registry);
+            if (state?.credentials) {
+                return `${registry} denied access to ${ref.repository} with the stored credentials (from ${state.credentials.source})`;
+            }
+            const missing = this.credentials.unavailableHelpers;
+            if (missing.length > 0) {
+                return `No credentials for ${registry}: docker-credential-${missing[0]} is not installed where Dockge runs, sign in under Settings > Registries instead`;
+            }
+            if (status !== 404) {
+                return `${registry} requires sign-in, add it under Settings > Registries`;
+            }
+        }
+        return `Cannot ${what} for ${ref.repository} (HTTP ${status})`;
+    }
+
     async getRemoteDigest(ref : ImageRef) : Promise<string> {
         const url = `${this.baseURL(ref.registry)}/v2/${ref.repository}/manifests/${ref.tag}`;
         const res = await this.request(ref, url, {
@@ -262,7 +289,7 @@ export class RegistryClient {
             headers: { Accept: MANIFEST_ACCEPT },
         });
         if (!res.ok) {
-            throw new Error(`Cannot read manifest for ${ref.repository}:${ref.tag} (HTTP ${res.status})`);
+            throw new Error(this.describeFailure(ref, `read the manifest of :${ref.tag}`, res.status));
         }
         const digest = res.headers.get("docker-content-digest");
         if (!digest) {
@@ -278,7 +305,7 @@ export class RegistryClient {
         for (let page = 0; url && page < MAX_TAG_PAGES; page++) {
             const res = await this.request(ref, url);
             if (!res.ok) {
-                throw new Error(`Cannot list tags for ${ref.repository} (HTTP ${res.status})`);
+                throw new Error(this.describeFailure(ref, "list tags", res.status));
             }
             const data = await res.json();
             if (Array.isArray(data.tags)) {

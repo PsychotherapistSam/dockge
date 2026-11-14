@@ -1,16 +1,29 @@
 <template>
     <div>
-        <div v-if="valid">
-            <ul v-if="isArrayInited" class="list-group">
-                <li v-for="(value, index) in array" :key="index" class="list-group-item">
-                    <input v-model="array[index]" type="text" class="no-bg domain-input" :placeholder="placeholder" />
-                    <font-awesome-icon icon="times" class="action remove ms-2 me-3 text-danger" @click="remove(index)" />
-                </li>
-            </ul>
+        <div v-if="valid" ref="list" class="list-editor">
+            <template v-if="isArrayInited">
+                <div v-for="(value, index) in array" :key="index" class="list-editor-row">
+                    <input
+                        v-model="array[index]"
+                        type="text"
+                        class="form-control"
+                        :placeholder="placeholder"
+                        :aria-label="displayName"
+                        spellcheck="false"
+                        @keydown.enter.prevent="onEnter(index)"
+                    />
+                    <button type="button" class="btn-icon list-editor-remove" :title="$t('Remove')" @click="remove(index)">
+                        <font-awesome-icon icon="times" />
+                    </button>
+                </div>
+            </template>
 
-            <button class="btn btn-normal btn-sm mt-3" @click="addField">{{ $t("addListItem", [ displayName ]) }}</button>
+            <button type="button" class="list-editor-add" @click="addAndFocus">
+                <font-awesome-icon icon="plus" />
+                {{ $t("addListItem", [ addLabel ]) }}
+            </button>
         </div>
-        <div v-else>
+        <div v-else class="list-editor-note">
             {{ $t("LongSyntaxNotSupported") }}
         </div>
     </div>
@@ -42,6 +55,15 @@ export default {
         };
     },
     computed: {
+        /** "Port" -> "port" for "Add port", but keep acronyms like "URL" */
+        addLabel() {
+            const name = this.displayName || "";
+            if (name.length > 1 && name === name.toUpperCase()) {
+                return name;
+            }
+            return name.charAt(0).toLowerCase() + name.slice(1);
+        },
+
         array() {
             // Create the array if not exists, it should be safe.
             if (!this.service[this.name]) {
@@ -118,32 +140,24 @@ export default {
         remove(index) {
             this.array.splice(index, 1);
         },
+        /** Add an entry and put the cursor in it */
+        addAndFocus() {
+            this.addField();
+            this.$nextTick(() => {
+                const inputs = this.$refs.list?.querySelectorAll("input");
+                inputs?.[inputs.length - 1]?.focus();
+            });
+        },
+        /** Enter in the last entry adds the next one, elsewhere it moves down */
+        onEnter(index) {
+            if (index === this.array.length - 1) {
+                if (this.array[index] !== "") {
+                    this.addAndFocus();
+                }
+            } else {
+                this.$refs.list?.querySelectorAll("input")?.[index + 1]?.focus();
+            }
+        },
     }
 };
 </script>
-
-<style lang="scss" scoped>
-@import "../styles/vars.scss";
-
-.list-group {
-    background-color: var(--raised);
-
-    li {
-        display: flex;
-        align-items: center;
-        padding: 8px 0 8px 12px;
-
-        .domain-input {
-            flex-grow: 1;
-            background-color: var(--raised);
-            border: none;
-            color: var(--text);
-            outline: none;
-
-            &::placeholder {
-                color: var(--text-3);
-            }
-        }
-    }
-}
-</style>

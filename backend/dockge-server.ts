@@ -38,6 +38,7 @@ import { AgentSocket } from "../common/agent-socket";
 import { ManageAgentSocketHandler } from "./socket-handlers/manage-agent-socket-handler";
 import { Terminal } from "./terminal";
 import { ImageUpdateChecker } from "./image-update-checker";
+import { RegistryLogins } from "./registry-logins";
 
 export class DockgeServer {
     app : Express;
@@ -352,6 +353,13 @@ export class DockgeServer {
     async serve() {
         // Create all the necessary directories
         this.initDataDir();
+
+        // Dockge's own docker config, so registry logins work inside the container
+        try {
+            RegistryLogins.init(this.config.dataDir);
+        } catch (e) {
+            log.error("registry", "Cannot set up Dockge's docker config: " + (e instanceof Error ? e.message : e));
+        }
 
         // Connect to database
         try {
