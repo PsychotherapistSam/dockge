@@ -303,6 +303,10 @@
                 @moved="loadStack"
             />
 
+            <BModal v-model="showLeaveDialog" :title="$t('leaveStackTitle')" :cancelTitle="$t('keepEditing')" :okTitle="$t('discardAndLeave')" okVariant="danger" @ok="confirmLeave" @hidden="cancelLeave">
+                {{ $t("confirmLeaveStack") }}
+            </BModal>
+
             <BModal v-model="showRemoveMovedDialog" :cancelTitle="$t('cancel')" :okTitle="$t('movedRemoveCopy')" okVariant="danger" @ok="removeMovedCopy">
                 {{ $t("movedRemoveConfirm", { name: stack.movedTo?.name ?? "" }) }}
             </BModal>
@@ -421,6 +425,9 @@ export default {
             checkingImageUpdates: false,
             showMoveDialog: false,
             showRemoveMovedDialog: false,
+            showLeaveDialog: false,
+            pendingLeave: null,
+            editSnapshot: "",
         };
     },
     computed: {
@@ -605,6 +612,7 @@ export default {
             };
 
             this.yamlCodeChange();
+            this.takeEditSnapshot();
 
         } else {
             this.stack.name = this.$route.params.stackName;
@@ -694,17 +702,41 @@ export default {
         },
 
         exitConfirm(next) {
-            if (this.isEditMode) {
-                if (confirm(this.$t("confirmLeaveStack"))) {
-                    this.exitAction();
-                    next();
-                } else {
-                    next(false);
-                }
+            if (this.isEditMode && this.editSnapshotString() !== this.editSnapshot) {
+                this.pendingLeave = next;
+                this.showLeaveDialog = true;
             } else {
                 this.exitAction();
                 next();
             }
+        },
+
+        confirmLeave() {
+            const next = this.pendingLeave;
+            this.pendingLeave = null;
+            if (next) {
+                this.exitAction();
+                next();
+            }
+        },
+
+        cancelLeave() {
+            const next = this.pendingLeave;
+            this.pendingLeave = null;
+            if (next) {
+                next(false);
+            }
+        },
+
+        editSnapshotString() {
+            return JSON.stringify([ this.stack.name, this.stack.composeYAML, this.stack.composeENV ]);
+        },
+
+        /** Remember what the stack looked like when editing started, after the YAML formatting watchers settle */
+        async takeEditSnapshot() {
+            await this.$nextTick();
+            await this.$nextTick();
+            this.editSnapshot = this.editSnapshotString();
         },
 
         exitAction() {
@@ -907,6 +939,7 @@ export default {
 
         enableEditMode() {
             this.isEditMode = true;
+            this.takeEditSnapshot();
         },
 
         checkYAML() {
