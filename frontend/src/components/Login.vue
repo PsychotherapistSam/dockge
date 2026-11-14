@@ -2,7 +2,10 @@
     <div class="form-container">
         <div class="form">
             <form @submit.prevent="submit">
-                <h1 class="h3 mb-3 fw-normal" />
+                <div class="auth-brand">
+                    <img src="/icon.svg" alt="" width="56" height="56" />
+                    <div class="auth-brand-name">Dockge</div>
+                </div>
 
                 <div v-if="!tokenRequired" class="form-floating">
                     <input id="floatingInput" v-model="username" type="text" class="form-control" placeholder="Username" autocomplete="username" required>
@@ -90,25 +93,30 @@ export default {
 .form-container {
     display: flex;
     align-items: center;
-    padding-top: 40px;
-    padding-bottom: 40px;
+    min-height: calc(100vh - 56px);
+    padding: 40px 16px;
 }
 
 .form-floating {
     > label {
-        padding-left: 1.3rem;
+        padding-left: 14px;
     }
 
-    > .form-control {
-        padding-left: 1.3rem;
+    > .form-control,
+    > .form-select {
+        padding-left: 14px;
     }
 }
 
 .form {
     width: 100%;
-    max-width: 330px;
-    padding: 15px;
+    max-width: 360px;
+    padding: 32px;
     margin: auto;
     text-align: center;
+    background-color: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: 20px;
+    box-shadow: var(--shadow-sm);
 }
 </style>

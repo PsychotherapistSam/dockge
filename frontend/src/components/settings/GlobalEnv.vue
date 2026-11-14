@@ -1,8 +1,8 @@
 <template>
-    <div>
-        <div v-if="settingsLoaded" class="my-4">
-            <form class="my-4" autocomplete="off" @submit.prevent="saveGeneral">
-                <div class="shadow-box mb-3 editor-box edit-mode">
+    <div class="settings-stack">
+        <SettingsCard v-if="settingsLoaded">
+            <SettingsRow label="global.env" :description="$t('globalEnvHelp')" stacked>
+                <div class="editor-box">
                     <code-mirror
                         ref="editor"
                         v-model="settings.globalENV"
@@ -15,21 +15,14 @@
                         @change="onChange"
                     />
                 </div>
-
-                <div class="my-4">
-                    <!-- Save Button -->
-                    <div>
-                        <button class="btn btn-primary" type="submit">
-                            {{ $t("Save") }}
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
+            </SettingsRow>
+        </SettingsCard>
     </div>
 </template>
 
 <script>
+import SettingsCard from "./SettingsCard.vue";
+import SettingsRow from "./SettingsRow.vue";
 import CodeMirror from "vue-codemirror6";
 import { python } from "@codemirror/lang-python"; // good enough for .env key=value highlighting
 import { dracula as editorTheme } from "thememirror";
@@ -40,6 +33,8 @@ export default {
     name: "GlobalEnv",
     components: {
         CodeMirror,
+        SettingsCard,
+        SettingsRow,
     },
 
     setup() {
@@ -87,12 +82,17 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.editor-box {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
+@import "../../styles/vars.scss";
 
-    &.edit-mode {
-        background-color: #2c2f38 !important;
-    }
+.editor-box {
+    font-family: $font-family-monospace;
+    font-size: 13px;
+    line-height: 20px;
+    padding: 12px 4px;
+    background-color: var(--editor-bg) !important;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 16px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
 }
 </style>

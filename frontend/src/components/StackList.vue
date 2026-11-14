@@ -1,5 +1,5 @@
 <template>
-    <div class="shadow-box mb-3" :style="boxStyle">
+    <div class="stack-panel">
         <div class="list-header">
             <div class="header-top">
                 <!-- TODO -->
@@ -10,18 +10,13 @@
                     {{ $t("Select") }}
                 </button>
 
-                <div class="placeholder"></div>
-                <div class="search-wrapper">
-                    <a v-if="searchText == ''" class="search-icon">
-                        <font-awesome-icon icon="search" />
-                    </a>
-                    <a v-if="searchText != ''" class="search-icon" style="cursor: pointer" @click="clearSearchText">
+                <form class="search-wrapper" @submit.prevent>
+                    <font-awesome-icon icon="search" class="search-icon" />
+                    <input v-model="searchText" class="form-control search-input" autocomplete="off" :placeholder="$t('Search')" />
+                    <button v-if="searchText != ''" type="button" class="btn-icon search-clear" :title="$t('Clear')" @click="clearSearchText">
                         <font-awesome-icon icon="times" />
-                    </a>
-                    <form>
-                        <input v-model="searchText" class="form-control search-input" autocomplete="off" />
-                    </form>
-                </div>
+                    </button>
+                </form>
             </div>
 
             <!-- TODO -->
@@ -47,22 +42,19 @@
                 </span>
             </div>
         </div>
-        <div ref="stackList" class="stack-list" :class="{ scrollbar: scrollbar }" :style="stackListStyle">
-            <div v-if="agentStackList[0] && agentStackList[0].stacks.length === 0" class="text-center mt-3">
+        <div ref="stackList" class="stack-list" :class="{ scrollbar: scrollbar }">
+            <div v-if="agentStackList[0] && agentStackList[0].stacks.length === 0" class="empty">
                 <router-link to="/compose">{{ $t("addFirstStackMsg") }}</router-link>
             </div>
             <div v-for="(agent, agentIndex) in agentStackList" :key="agentIndex" class="stack-list-inner">
-                <div
-                    v-if="$root.agentCount > 1" class="p-2 agent-select"
+                <button
+                    v-if="$root.agentCount > 1" type="button" class="agent-select"
                     @click="closedAgents.set(agent.endpoint, !closedAgents.get(agent.endpoint))"
                 >
-                    <span class="me-1">
-                        <font-awesome-icon v-show="closedAgents.get(agent.endpoint)" icon="chevron-circle-right" />
-                        <font-awesome-icon v-show="!closedAgents.get(agent.endpoint)" icon="chevron-circle-down" />
-                    </span>
+                    <font-awesome-icon icon="chevron-down" class="agent-chevron" :class="{ closed: closedAgents.get(agent.endpoint) }" />
                     <span v-if="agent.endpoint === 'current'">{{ $t("currentEndpoint") }}</span>
                     <span v-else>{{ agent.endpoint }}</span>
-                </div>
+                </button>
                 <StackListItem
                     v-for="(item, index) in agent.stacks"
                     v-show="$root.agentCount === 1 || !closedAgents.get(agent.endpoint)" :key="index" :stack="item" :isSelectMode="selectMode"
@@ -390,106 +382,114 @@ export default {
 <style lang="scss" scoped>
 @import "../styles/vars.scss";
 
-.shadow-box {
-    height: calc(100vh - 150px);
-    position: sticky;
-    top: 10px;
-}
-
-.small-padding {
-    padding-left: 5px !important;
-    padding-right: 5px !important;
+.stack-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
 }
 
 .list-header {
-    border-bottom: 1px solid #dee2e6;
-    border-radius: 10px 10px 0 0;
-    margin: -10px;
-    margin-bottom: 10px;
-    padding: 10px;
-
-    .dark & {
-        background-color: $dark-header-bg;
-        border-bottom: 0;
-    }
-}
-
-.header-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.header-filter {
-    display: flex;
-    align-items: center;
-}
-
-@media (max-width: 770px) {
-    .list-header {
-        margin: -20px;
-        margin-bottom: 10px;
-        padding: 5px;
-    }
+    padding-bottom: 12px;
 }
 
 .search-wrapper {
+    position: relative;
     display: flex;
     align-items: center;
+    margin: 0;
 }
 
 .search-icon {
-    padding: 10px;
-    color: #c0c0c0;
-
-    // Clear filter button (X)
-    svg[data-icon="times"] {
-        cursor: pointer;
-        transition: all ease-in-out 0.1s;
-
-        &:hover {
-            opacity: 0.5;
-        }
-    }
+    position: absolute;
+    left: 10px;
+    width: 14px;
+    color: var(--text-3);
+    pointer-events: none;
 }
 
 .search-input {
-    max-width: 15em;
+    height: 32px;
+    padding: 6px 32px;
+    font-size: 13px;
+    background-color: var(--surface);
 }
 
-.stack-item {
-    width: 100%;
-}
-
-.tags {
-    margin-top: 4px;
-    padding-left: 67px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0;
-}
-
-.bottom-style {
-    padding-left: 67px;
-    margin-top: 5px;
-}
-
-.selection-controls {
-    margin-top: 5px;
-    display: flex;
+.search-clear {
+    position: absolute;
+    right: 2px;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+
+    svg {
+        width: 12px;
+    }
+}
+
+.stack-list {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    &.scrollbar {
+        overflow-y: auto;
+        margin-right: -8px;
+        padding-right: 8px;
+    }
+}
+
+.stack-list-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    & + & {
+        margin-top: 16px;
+    }
+}
+
+.empty {
+    padding: 12px 8px;
+    color: var(--text-3);
+
+    a {
+        color: var(--text-2);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-color: var(--hairline-strong);
+    }
 }
 
 .agent-select {
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    color: $dark-font-color3;
-    padding-left: 10px;
-    padding-right: 10px;
     display: flex;
     align-items: center;
+    gap: 8px;
+    height: 24px;
+    margin-bottom: 4px;
+    padding: 0 8px;
+    font-size: 12px;
+    color: var(--text-3);
+    background: none;
+    border: 0;
+    text-align: left;
     user-select: none;
+
+    &:hover {
+        color: var(--text-2);
+    }
+}
+
+.agent-chevron {
+    width: 10px;
+    transition: transform 0.15s $ease;
+
+    &.closed {
+        transform: rotate(-90deg);
+    }
 }
 </style>

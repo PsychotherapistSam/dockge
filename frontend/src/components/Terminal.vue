@@ -84,8 +84,14 @@ export default {
         }
 
         this.terminal = new Terminal({
-            fontSize: 14,
+            fontSize: 13,
             fontFamily: "'JetBrains Mono', monospace",
+            theme: {
+                background: "#07080d",
+                foreground: "#eef0f5",
+                cursor: "#74c2ff",
+                selectionBackground: "rgba(116, 194, 255, 0.3)",
+            },
             cursorBlink,
             cols: this.cols,
             rows: this.rows,
@@ -383,7 +389,6 @@ export default {
 
 <style lang="scss">
 .terminal {
-    background-color: black !important;
     height: 100%;
 }
 </style>

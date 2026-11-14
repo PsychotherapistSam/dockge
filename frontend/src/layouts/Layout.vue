@@ -9,84 +9,70 @@
             </div>
         </div>
 
-        <!-- Desktop header -->
-        <header v-if="! $root.isMobile" class="d-flex flex-wrap justify-content-center py-3 mb-3 border-bottom">
-            <router-link to="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-dark text-decoration-none">
-                <object class="bi me-2 ms-4" width="40" height="40" data="/icon.svg" />
-                <span class="fs-4 title">Dockge</span>
+        <header class="app-header">
+            <router-link to="/" class="brand">
+                <img class="brand-mark" src="/icon.svg" alt="" width="24" height="24" />
+                <span class="brand-name">Dockge</span>
             </router-link>
 
-            <a v-if="hasNewVersion" target="_blank" :href="releasesURL" class="btn btn-warning me-3">
-                <font-awesome-icon icon="arrow-alt-circle-up" /> {{ $t("newUpdate") }}
-            </a>
+            <div class="header-actions">
+                <a v-if="hasNewVersion" target="_blank" rel="noopener" :href="releasesURL" class="btn btn-sm btn-normal update-btn">
+                    <font-awesome-icon icon="arrow-alt-circle-up" class="update-icon" />{{ $t("newUpdate") }}
+                </a>
 
-            <ul class="nav nav-pills">
-                <li v-if="$root.loggedIn" class="nav-item me-2">
-                    <router-link to="/" class="nav-link">
-                        <font-awesome-icon icon="home" /> {{ $t("home") }}
+                <nav v-if="$root.loggedIn" class="nav nav-pills">
+                    <router-link to="/" class="nav-link" exact-active-class="active">
+                        <font-awesome-icon icon="home" />
+                        <span class="nav-label">{{ $t("home") }}</span>
                     </router-link>
-                </li>
-
-                <li v-if="$root.loggedIn" class="nav-item me-2">
                     <router-link to="/console" class="nav-link">
-                        <font-awesome-icon icon="terminal" /> {{ $t("console") }}
+                        <font-awesome-icon icon="terminal" />
+                        <span class="nav-label">{{ $t("console") }}</span>
                     </router-link>
-                </li>
+                </nav>
 
-                <li v-if="$root.loggedIn" class="nav-item">
-                    <div class="dropdown dropdown-profile-pic">
-                        <div class="nav-link" data-bs-toggle="dropdown">
-                            <div class="profile-pic">{{ $root.usernameFirstChar }}</div>
-                            <font-awesome-icon icon="angle-down" />
-                        </div>
+                <div v-if="$root.loggedIn" class="dropdown dropdown-profile-pic">
+                    <button type="button" class="profile-button" data-bs-toggle="dropdown" aria-expanded="false" :aria-label="$t('Settings')">
+                        <span class="profile-pic">{{ $root.usernameFirstChar }}</span>
+                        <font-awesome-icon icon="angle-down" class="profile-chevron" />
+                    </button>
 
-                        <!-- Header's Dropdown Menu -->
-                        <ul class="dropdown-menu">
-                            <!-- Username -->
-                            <li>
-                                <i18n-t v-if="$root.username != null" tag="span" keypath="signedInDisp" class="dropdown-item-text">
-                                    <strong>{{ $root.username }}</strong>
-                                </i18n-t>
-                                <span v-if="$root.username == null" class="dropdown-item-text">{{ $t("signedInDispDisabled") }}</span>
-                            </li>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <i18n-t v-if="$root.username != null" tag="span" keypath="signedInDisp" class="dropdown-item-text">
+                                <strong>{{ $root.username }}</strong>
+                            </i18n-t>
+                            <span v-if="$root.username == null" class="dropdown-item-text">{{ $t("signedInDispDisabled") }}</span>
+                        </li>
 
-                            <li><hr class="dropdown-divider"></li>
+                        <li><hr class="dropdown-divider"></li>
 
-                            <!-- Functions -->
+                        <li>
+                            <button class="dropdown-item" @click="scanFolder">
+                                <font-awesome-icon icon="arrows-rotate" /> {{ $t("scanFolder") }}
+                            </button>
+                        </li>
 
-                            <!--<li>
-                                <router-link to="/registry" class="dropdown-item" :class="{ active: $route.path.includes('settings') }">
-                                    <font-awesome-icon icon="warehouse" /> {{ $t("registry") }}
-                                </router-link>
-                            </li>-->
+                        <li>
+                            <router-link to="/settings/general" class="dropdown-item" :class="{ active: $route.path.includes('settings') }">
+                                <font-awesome-icon icon="cog" /> {{ $t("Settings") }}
+                            </router-link>
+                        </li>
 
-                            <li>
-                                <button class="dropdown-item" @click="scanFolder">
-                                    <font-awesome-icon icon="arrows-rotate" /> {{ $t("scanFolder") }}
-                                </button>
-                            </li>
-
-                            <li>
-                                <router-link to="/settings/general" class="dropdown-item" :class="{ active: $route.path.includes('settings') }">
-                                    <font-awesome-icon icon="cog" /> {{ $t("Settings") }}
-                                </router-link>
-                            </li>
-
-                            <li>
-                                <button class="dropdown-item" @click="$root.logout">
-                                    <font-awesome-icon icon="sign-out-alt" />
-                                    {{ $t("Logout") }}
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
-                </li>
-            </ul>
+                        <li>
+                            <button class="dropdown-item" @click="$root.logout">
+                                <font-awesome-icon icon="sign-out-alt" />
+                                {{ $t("Logout") }}
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </header>
 
         <main>
-            <div v-if="$root.socketIO.connecting" class="container mt-5">
-                <h4>{{ $t("connecting...") }}</h4>
+            <div v-if="$root.socketIO.connecting" class="connecting">
+                {{ $t("connecting...") }}
             </div>
 
             <router-view v-if="$root.loggedIn" />
@@ -162,155 +148,147 @@ export default {
 <style lang="scss" scoped>
 @import "../styles/vars.scss";
 
-.nav-link {
-    &.status-page {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    padding: 0 16px 0 20px;
+    background-color: var(--bg-deep);
+    border-bottom: 1px solid var(--hairline);
 }
 
-.bottom-nav {
-    z-index: 1000;
-    position: fixed;
-    bottom: 0;
-    height: calc(60px + env(safe-area-inset-bottom));
-    width: 100%;
-    left: 0;
-    background-color: #fff;
-    box-shadow: 0 15px 47px 0 rgba(0, 0, 0, 0.05), 0 5px 14px 0 rgba(0, 0, 0, 0.05);
-    text-align: center;
-    white-space: nowrap;
-    padding: 0 10px env(safe-area-inset-bottom);
-
-    a {
-        text-align: center;
-        width: 25%;
-        display: inline-block;
-        height: 100%;
-        padding: 8px 10px 0;
-        font-size: 13px;
-        color: #c1c1c1;
-        overflow: hidden;
-        text-decoration: none;
-
-        &.router-link-exact-active, &.active {
-            color: $primary;
-            font-weight: bold;
-        }
-
-        div {
-            font-size: 20px;
-        }
-    }
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+    text-decoration: none;
 }
 
-main {
-    min-height: calc(100vh - 160px);
+.brand-mark {
+    display: block;
 }
 
-.title {
-    font-weight: bold;
+.brand-name {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.update-btn .update-icon {
+    color: var(--accent-ink);
 }
 
 .nav {
-    margin-right: 25px;
+    gap: 4px;
+
+    .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 32px;
+        padding: 0 12px;
+        font-size: 14px;
+
+        svg {
+            width: 14px;
+            color: var(--text-3);
+        }
+
+        &.active svg {
+            color: var(--text-2);
+        }
+    }
+}
+
+.profile-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 8px 0 4px;
+    color: var(--text-3);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    transition: background-color 0.15s $ease, border-color 0.15s $ease;
+
+    &:hover,
+    &[aria-expanded="true"] {
+        background-color: var(--raised);
+        border-color: var(--hairline);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+}
+
+.profile-pic {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    background-color: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.profile-chevron {
+    width: 10px;
+}
+
+.dropdown-menu {
+    min-width: 220px;
+    margin-top: 8px !important;
+}
+
+main {
+    min-height: calc(100vh - 56px);
+}
+
+.connecting {
+    padding: 32px;
+    color: var(--text-2);
 }
 
 .lost-connection {
-    padding: 5px;
-    background-color: crimson;
-    color: white;
     position: fixed;
-    width: 100%;
     z-index: 99999;
-}
+    width: 100%;
+    padding: 8px 16px;
+    color: #fff;
+    background-color: var(--err);
 
-// Profile Pic Button with Dropdown
-.dropdown-profile-pic {
-    user-select: none;
-
-    .nav-link {
-        cursor: pointer;
-        display: flex;
-        gap: 6px;
-        align-items: center;
-        background-color: rgba(200, 200, 200, 0.2);
-        padding: 0.5rem 0.8rem;
-
-        &:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-    }
-
-    .dropdown-menu {
-        transition: all 0.2s;
-        padding-left: 0;
-        padding-bottom: 0;
-        margin-top: 8px !important;
-        border-radius: 16px;
-        overflow: hidden;
-
-        .dropdown-divider {
-            margin: 0;
-            border-top: 1px solid rgba(0, 0, 0, 0.4);
-            background-color: transparent;
-        }
-
-        .dropdown-item-text {
-            font-size: 14px;
-            padding-bottom: 0.7rem;
-        }
-
-        .dropdown-item {
-            padding: 0.7rem 1rem;
-        }
-
-        .dark & {
-            background-color: $dark-bg;
-            color: $dark-font-color;
-            border-color: $dark-border-color;
-
-            .dropdown-item {
-                color: $dark-font-color;
-
-                &.active {
-                    color: $dark-font-color2;
-                    background-color: $highlight !important;
-                }
-
-                &:hover {
-                    background-color: $dark-bg2;
-                }
-            }
-        }
-    }
-
-    .profile-pic {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        background-color: $primary;
-        width: 24px;
-        height: 24px;
-        margin-right: 5px;
-        border-radius: 50rem;
-        font-weight: bold;
-        font-size: 10px;
+    a {
+        color: inherit;
+        text-decoration: underline;
     }
 }
 
-.dark {
-    header {
-        background-color: $dark-header-bg;
-        border-bottom-color: $dark-header-bg !important;
-
-        span {
-            color: #f0f6fc;
-        }
+@media (max-width: 767px) {
+    .app-header {
+        padding: 0 12px;
     }
 
-    .bottom-nav {
-        background-color: $dark-bg;
+    .nav-label,
+    .update-btn {
+        display: none !important;
     }
 }
 </style>

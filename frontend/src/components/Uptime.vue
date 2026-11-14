@@ -1,5 +1,8 @@
 <template>
-    <span :class="className">{{ statusName }}</span>
+    <span class="stack-status" :title="statusName">
+        <span class="led" :class="ledClass"></span>
+        <span v-if="label" class="stack-status-label">{{ statusName }}</span>
+    </span>
 </template>
 
 <script>
@@ -11,46 +14,42 @@ export default {
             type: Object,
             default: null,
         },
-        fixedWidth: {
+        /** Show the status name next to the LED */
+        label: {
             type: Boolean,
             default: false,
         },
     },
 
     computed: {
-        uptime() {
-            return this.$t("notAvailableShort");
-        },
-
-        color() {
-            return statusColor(this.stack?.status);
-        },
-
         statusName() {
             return this.$t(statusNameShort(this.stack?.status));
         },
 
-        className() {
-            let className = `badge rounded-pill bg-${this.color}`;
-
-            if (this.fixedWidth) {
-                className += " fixed-width";
+        ledClass() {
+            switch (statusColor(this.stack?.status)) {
+                case "primary":
+                    return "ok";
+                case "danger":
+                    return "err";
+                default:
+                    return "off";
             }
-            return className;
         },
     },
 };
 </script>
 
 <style scoped>
-.badge {
-    min-width: 62px;
-
+.stack-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.fixed-width {
-    width: 62px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.stack-status-label {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-2);
 }
 </style>

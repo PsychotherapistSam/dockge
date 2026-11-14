@@ -1,26 +1,92 @@
+// Design tokens
+//
+// Two layers:
+// - SCSS variables below configure Bootstrap and keep the old names that
+//   components use inside `.dark &` blocks (now pointing at the graphite ramp)
+// - CSS custom properties in main.scss (`--surface`, `--text-2`, ...) switch
+//   between the light and dark theme and are what new styles should use
+
+// Brand blue, the one accent. Darker ink for text on light surfaces.
 $primary: #74c2ff;
-$danger: #dc3545;
-$warning: #f8a306;
+$accent-ink-light: #0b6db8;
+
+// Semantic, toned to sit inside the ramp
+$success: #16a34a;
+$danger: #dc2626;
+$warning: #c88a04;
+$info: $primary;
 $maintenance: #1747f5;
-$link-color: #111;
-$border-radius: 50rem;
 
-$highlight: #9dd1ff;
-$highlight-white: #e7faec;
+// Ink ramp, dark: a server room at night, Dockge's blue-black
+$g-deep: #07080d;
+$g-page: #0b0d14;
+$g-card: #11141c;
+$g-raised: #1a1e28;
+$g-text: #eef0f5;
+$g-text-2: #a3a9b8;
+$g-text-3: #7a8296;
+$g-hairline: rgba(238, 240, 245, 0.08);
 
-$dark-font-color: #b1b8c0;
-$dark-font-color2: #020b05;
-$dark-font-color3: #575c62;
-$dark-bg: #0d1117;
-$dark-bg2: #070a10;
-$dark-border-color: #1d2634;
-$dark-header-bg: #161b22;
+// Ink ramp, light
+$l-page: #f5f7fa;
+$l-card: #ffffff;
+$l-raised: #eceff4;
+$l-text: #111827;
+$l-text-2: #4b5565;
+$l-text-3: #6b7487;
+$l-hairline: rgba(17, 24, 39, 0.08);
 
-$easing-in: cubic-bezier(0.54, 0.78, 0.55, 0.97);
-$easing-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-$easing-in-out: cubic-bezier(0.79, 0.14, 0.15, 0.86);
+// Legacy names, used by components in dark mode
+$highlight: $primary;
+$highlight-white: $l-raised;
+$dark-font-color: $g-text;
+$dark-font-color2: $g-page;
+$dark-font-color3: $g-text-3;
+$dark-bg: $g-card;
+$dark-bg2: $g-raised;
+$dark-border-color: $g-hairline;
+$dark-header-bg: $g-raised;
 
-$dropdown-border-radius: 0.5rem;
+// Kept for compatibility, no longer gradients
+$primary-gradient: $primary;
+$primary-gradient-active: $primary;
 
-$primary-gradient: linear-gradient(135deg, #74c2ff 0%, #74c2ff 75%, #86e6a9);
-$primary-gradient-active: linear-gradient(135deg, #74c2ff 0%, #74c2ff 50%, #86e6a9);
+// Motion: one curve
+$ease: cubic-bezier(0.22, 1, 0.36, 1);
+$easing-in: $ease;
+$easing-out: $ease;
+$easing-in-out: $ease;
+
+// Bootstrap configuration
+$font-family-sans-serif: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+$font-family-monospace: "JetBrains Mono", SFMono-Regular, Menlo, Consolas, monospace;
+$font-size-base: 0.875rem;
+$font-size-sm: 0.8125rem;
+$line-height-base: 1.4286;
+$headings-font-weight: 500;
+$body-bg: $l-page;
+$body-color: $l-text;
+$link-color: $l-text;
+$link-decoration: none;
+
+$border-radius: 10px;
+$border-radius-sm: 8px;
+$border-radius-lg: 16px;
+$dropdown-border-radius: 14px;
+$modal-content-border-radius: 20px;
+$badge-border-radius: 6px;
+$badge-font-weight: 500;
+$nav-pills-border-radius: 10px;
+
+$input-btn-padding-y: 7px;
+$input-btn-padding-x: 14px;
+$input-btn-padding-y-sm: 3px;
+$input-btn-padding-x-sm: 10px;
+$btn-font-weight: 500;
+$focus-ring-width: 2px;
+$focus-ring-opacity: 0.5;
+$input-btn-focus-width: 2px;
+$input-btn-focus-color-opacity: 0.5;
+$transition-base: color 0.15s $ease, background-color 0.15s $ease, border-color 0.15s $ease, opacity 0.15s $ease;
+$btn-transition: color 0.15s $ease, background-color 0.15s $ease, border-color 0.15s $ease, box-shadow 0.15s $ease;
+$input-transition: border-color 0.15s $ease, box-shadow 0.15s $ease;

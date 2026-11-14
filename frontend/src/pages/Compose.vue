@@ -1,16 +1,15 @@
 <template>
     <transition name="slide-fade" appear>
         <div>
-            <h1 v-if="isAdd" class="mb-3">{{ $t("compose") }}</h1>
-            <h1 v-else class="mb-3">
-                <Uptime :stack="globalStack" :pill="true" /> {{ stack.name }}
-                <span v-if="$root.agentCount > 1 && endpoint !== ''" class="agent-name">
-                    ({{ endpointDisplay }})
-                </span>
-            </h1>
+            <h1 v-if="isAdd" class="page-title">{{ $t("compose") }}</h1>
+            <div v-else class="page-head">
+                <h1 class="page-title">{{ stack.name }}</h1>
+                <Uptime :stack="globalStack" :label="true" />
+                <span v-if="$root.agentCount > 1 && endpoint !== ''" class="agent-name">{{ endpointDisplay }}</span>
+            </div>
 
-            <div v-if="stack.isManagedByDockge" class="mb-3">
-                <div class="btn-group me-2" role="group">
+            <div v-if="stack.isManagedByDockge" class="toolbar">
+                <div class="btn-group" role="group">
                     <button v-if="isEditMode" class="btn btn-primary" :disabled="processing" @click="deployStack">
                         <font-awesome-icon icon="rocket" class="me-1" />
                         {{ $t("deployStack") }}
@@ -61,10 +60,28 @@
                 </button>
             </div>
 
+            <!-- Image updates -->
+            <div v-if="!isEditMode && !isAdd && (digestUpdateServices.length > 0 || newTagServices.length > 0)" class="update-callout">
+                <font-awesome-icon icon="cloud-arrow-down" class="update-callout-icon" />
+                <div class="update-callout-text">
+                    <div v-if="digestUpdateServices.length > 0">
+                        {{ $t("imageNewerFor", { names: digestUpdateServices.join(", ") }) }}
+                    </div>
+                    <div v-if="newTagServices.length > 0">
+                        {{ $t("imageNewTagsFor", { names: newTagServices.join(", ") }) }}
+                        <span class="update-callout-hint">{{ $t("imageNewTagsHint") }}</span>
+                    </div>
+                </div>
+                <button v-if="digestUpdateServices.length > 0" class="btn btn-primary btn-sm" :disabled="processing" @click="updateStack">
+                    <font-awesome-icon icon="cloud-arrow-down" />
+                    {{ $t("updateStack") }}
+                </button>
+            </div>
+
             <!-- URLs -->
-            <div v-if="urls.length > 0" class="mb-3">
-                <a v-for="(urlItem, index) in urls" :key="index" target="_blank" :href="urlItem.url">
-                    <span class="badge bg-secondary me-2">{{ urlItem.display }}</span>
+            <div v-if="urls.length > 0" class="stack-urls">
+                <a v-for="(urlItem, index) in urls" :key="index" target="_blank" rel="noopener" :href="urlItem.url" class="stack-url mono">
+                    {{ urlItem.display }}
                 </a>
             </div>
 
@@ -81,11 +98,11 @@
                 ></Terminal>
             </transition>
 
-            <div v-if="stack.isManagedByDockge" class="row">
+            <div v-if="stack.isManagedByDockge" class="row g-4">
                 <div class="col-lg-6">
                     <!-- General -->
                     <div v-if="isAdd">
-                        <h4 class="mb-3">{{ $t("general") }}</h4>
+                        <h2 class="section-title">{{ $t("general") }}</h2>
                         <div class="shadow-box big-padding mb-3">
                             <!-- Stack Name -->
                             <div>
@@ -107,7 +124,7 @@
                     </div>
 
                     <!-- Containers -->
-                    <h4 class="mb-3">{{ $tc("container", 2) }}</h4>
+                    <h2 class="section-title">{{ $tc("container", 2) }}</h2>
 
                     <div v-if="isEditMode" class="input-group mb-3">
                         <input
@@ -122,13 +139,14 @@
                     </div>
 
                     <div v-if="!isEditMode && !isAdd" class="image-update-bar mb-3">
-                        <span v-if="imageUpdates">{{ $t("imageUpdatesLastChecked", { time: imageUpdatesCheckedAgo }) }}</span>
-                        <span v-else>{{ $t("imageUpdatesNeverChecked") }}</span>
-                        <span v-if="imageUpdates?.error" class="text-danger ms-2" :title="imageUpdates.error">
+                        <span v-if="!imageUpdates">{{ $t("imageUpdatesNeverChecked") }}</span>
+                        <span v-else-if="imageUpdates.updateCount === 0 && !imageUpdates.error">{{ $t("imagesUpToDate", { time: imageUpdatesCheckedAgo }) }}</span>
+                        <span v-else>{{ $t("imageUpdatesLastChecked", { time: imageUpdatesCheckedAgo }) }}</span>
+                        <span v-if="imageUpdates?.error" class="text-danger" :title="imageUpdates.error">
                             <font-awesome-icon icon="exclamation-circle" />
                         </span>
-                        <button class="btn btn-sm btn-normal ms-2" :disabled="checkingImageUpdates" @click="checkImageUpdates">
-                            <font-awesome-icon icon="arrows-rotate" :spin="checkingImageUpdates" class="me-1" />
+                        <button class="btn btn-sm btn-normal" :disabled="checkingImageUpdates" @click="checkImageUpdates">
+                            <font-awesome-icon icon="arrows-rotate" :spin="checkingImageUpdates" />
                             {{ $t("checkImageUpdates") }}
                         </button>
                     </div>
@@ -153,7 +171,7 @@
 
                     <!-- General -->
                     <div v-if="isEditMode">
-                        <h4 class="mb-3">{{ $t("extra") }}</h4>
+                        <h2 class="section-title">{{ $t("extra") }}</h2>
                         <div class="shadow-box big-padding mb-3">
                             <!-- URLs -->
                             <div class="mb-4">
@@ -167,7 +185,7 @@
 
                     <!-- Combined Terminal Output -->
                     <div v-show="!isEditMode">
-                        <h4 class="mb-3">{{ $t("terminal") }}</h4>
+                        <h2 class="section-title">{{ $t("terminal") }}</h2>
                         <Terminal
                             ref="combinedTerminal"
                             class="mb-3 terminal"
@@ -180,7 +198,7 @@
                     </div>
                 </div>
                 <div class="col-lg-6">
-                    <h4 class="mb-3">{{ stack.composeFileName }}</h4>
+                    <h2 class="section-title mono file-name">{{ stack.composeFileName }}</h2>
 
                     <!-- YAML editor -->
                     <div class="shadow-box mb-3 editor-box" :class="{'edit-mode' : isEditMode}">
@@ -203,7 +221,7 @@
 
                     <!-- ENV editor -->
                     <div v-if="isEditMode">
-                        <h4 class="mb-3">.env</h4>
+                        <h2 class="section-title mono file-name">.env</h2>
                         <div class="shadow-box mb-3 editor-box" :class="{'edit-mode' : isEditMode}">
                             <code-mirror
                                 ref="editor"
@@ -229,7 +247,7 @@
                         </div>
 
                         <!-- Networks -->
-                        <h4 class="mb-3">{{ $tc("network", 2) }}</h4>
+                        <h2 class="section-title">{{ $tc("network", 2) }}</h2>
                         <div class="shadow-box big-padding mb-3">
                             <NetworkInput />
                         </div>
@@ -408,6 +426,18 @@ export default {
 
         status() {
             return this.globalStack?.status;
+        },
+
+        digestUpdateServices() {
+            return Object.values(this.imageUpdates?.services ?? {})
+                .filter((s) => s.digestUpdate)
+                .map((s) => s.service);
+        },
+
+        newTagServices() {
+            return Object.values(this.imageUpdates?.services ?? {})
+                .filter((s) => !s.digestUpdate && s.newTags?.length > 0)
+                .map((s) => s.service);
         },
 
         imageUpdatesCheckedAgo() {
@@ -898,17 +928,150 @@ export default {
 <style scoped lang="scss">
 @import "../styles/vars.scss";
 
+.page-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    margin-bottom: 16px;
+
+    .page-title {
+        margin-bottom: 0;
+    }
+}
+
+.page-title {
+    margin-bottom: 16px;
+}
+
+.agent-name {
+    font-size: 13px;
+    color: var(--text-3);
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+
+    :deep(.dropdown-toggle) {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
+
+@media (max-width: 767px) {
+    .toolbar .btn-group {
+        flex-wrap: wrap;
+        gap: 4px;
+
+        > .btn,
+        > .btn-group > .btn,
+        > .dropdown > .btn {
+            margin-left: 0;
+            border-radius: 8px !important;
+        }
+    }
+}
+
+.update-callout {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 12px 12px 16px;
+    border-radius: 14px;
+    background-color: var(--accent-soft);
+    color: var(--text);
+
+    .btn {
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+}
+
+.update-callout-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--accent-ink);
+}
+
+.update-callout-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.update-callout-hint {
+    margin-left: 6px;
+    font-size: 13px;
+    color: var(--text-2);
+}
+
+.stack-urls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: -8px 0 24px;
+}
+
+.stack-url {
+    font-size: 12px;
+    line-height: 16px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    color: var(--accent-ink);
+    border: 1px solid var(--hairline);
+    text-decoration: none;
+
+    &:hover {
+        background-color: var(--raised);
+        border-color: var(--hairline-strong);
+    }
+}
+
+.section-title {
+    font-size: 16px;
+    line-height: 24px;
+    margin-bottom: 12px;
+
+    &.file-name {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--text-2);
+    }
+}
+
+.image-update-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    font-size: 13px;
+    color: var(--text-3);
+}
+
 .terminal {
     height: 200px;
 }
 
 .editor-box {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
-}
-
-.agent-name {
+    font-family: $font-family-monospace;
     font-size: 13px;
-    color: $dark-font-color3;
+    line-height: 20px;
+    background-color: var(--editor-bg);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    box-shadow: var(--shadow-sm);
+    padding: 12px 4px;
+    overflow: hidden;
+
+    &.edit-mode {
+        border-color: var(--hairline-strong);
+    }
 }
 </style>

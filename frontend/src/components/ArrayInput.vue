@@ -126,22 +126,22 @@ export default {
 @import "../styles/vars.scss";
 
 .list-group {
-    background-color: $dark-bg2;
+    background-color: var(--raised);
 
     li {
         display: flex;
         align-items: center;
-        padding: 10px 0 10px 10px;
+        padding: 8px 0 8px 12px;
 
         .domain-input {
             flex-grow: 1;
-            background-color: $dark-bg2;
+            background-color: var(--raised);
             border: none;
-            color: $dark-font-color;
+            color: var(--text);
             outline: none;
 
             &::placeholder {
-                color: #1d2634;
+                color: var(--text-3);
             }
         }
     }

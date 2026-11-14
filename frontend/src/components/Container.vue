@@ -1,102 +1,86 @@
 <template>
-    <div class="shadow-box big-padding mb-3 container">
-        <div class="row">
-            <div class="col-5">
-                <h4>{{ name }}</h4>
-                <div class="image mb-2">
-                    <span class="me-1">{{ imageName }}:</span><span class="tag">{{ imageTag }}</span>
-                </div>
-                <div v-if="imageUpdate && !isEditMode && hasImageUpdateInfo" class="image-update mb-2">
-                    <span
-                        v-if="imageUpdate.digestUpdate"
-                        class="badge bg-warning text-dark me-1"
-                        :title="$t('imageDigestUpdateTitle', { tag: imageTag })"
-                    >
-                        <font-awesome-icon icon="arrow-alt-circle-up" class="me-1" />{{ $t("imageUpdateAvailable") }}
-                    </span>
-                    <template v-if="imageUpdate.newTags.length > 0">
-                        <span class="me-1">{{ $t("newTags") }}:</span>
-                        <span v-for="tag in visibleNewTags" :key="tag" class="badge new-tag me-1">{{ tag }}</span>
-                        <a v-if="!showAllTags && hiddenTagCount > 0" href="#" @click.prevent="showAllTags = true">{{ $t("andMore", { n: hiddenTagCount }) }}</a>
-                        <a v-else-if="showAllTags" href="#" @click.prevent="showAllTags = false">{{ $t("showLess") }}</a>
-                    </template>
-                    <span v-if="imageUpdate.status === 'error'" class="text-danger" :title="imageUpdate.message">
-                        <font-awesome-icon icon="exclamation-circle" class="me-1" />{{ $t("imageUpdateCheckFailed") }}
-                    </span>
-                </div>
-                <div v-if="!isEditMode">
-                    <span class="badge me-1" :class="bgStyle">{{ status }}</span>
+    <div class="shadow-box mb-3 container-card">
+        <div class="card-head">
+            <span class="led" :class="ledClass" :title="status"></span>
+            <h3 class="service-name">{{ name }}</h3>
+            <span v-if="!isEditMode" class="service-status">{{ status }}</span>
 
-                    <a v-for="port in (ports ?? envsubstService.ports)" :key="port" :href="parsePort(port).url" target="_blank">
-                        <span class="badge me-1 bg-secondary">{{ parsePort(port).display }}</span>
-                    </a>
-                </div>
-            </div>
-            <div class="col-7">
-                <div class="function">
-                    <div class="btn-group me-2" role="group">
-                        <router-link v-if="!isEditMode && (status === 'running' || status === 'healthy')" class="btn btn-normal" :to="terminalRouteLink" disabled="">
-                            <font-awesome-icon icon="terminal" />
-                            Bash
-                        </router-link>
-                        <button
-                            v-if="serviceCount > 1 && !isEditMode && status !== 'running' && status !== 'healthy'"
-                            class="btn btn-primary"
-                            :disabled="processing"
-                            @click="startService"
-                        >
-                            <font-awesome-icon icon="play" class="me-1" />
-                            {{ $t("startStack") }}
-                        </button>
-                        <button
-                            v-if="serviceCount > 1 && !isEditMode && (status === 'running' || status === 'healthy' || status === 'unhealthy')"
-                            class="btn btn-normal"
-                            :disabled="processing"
-                            @click="restartService"
-                        >
-                            <font-awesome-icon icon="rotate" class="me-1" />
-                            {{ $t("restartStack") }}
-                        </button>
-                        <button
-                            v-if="serviceCount > 1 && !isEditMode && (status === 'running' || status === 'healthy' || status === 'unhealthy')"
-                            class="btn btn-normal"
-                            :disabled="processing"
-                            @click="stopService"
-                        >
-                            <font-awesome-icon icon="stop" class="me-1" />
-                            {{ $t("stopStack") }}
-                        </button>
-                    </div>
-                </div>
+            <div v-if="!isEditMode" class="card-actions">
+                <router-link v-if="status === 'running' || status === 'healthy'" class="btn-icon" :to="terminalRouteLink" :title="'Bash'">
+                    <font-awesome-icon icon="terminal" />
+                </router-link>
+                <button
+                    v-if="serviceCount > 1 && status !== 'running' && status !== 'healthy'"
+                    type="button" class="btn-icon" :title="$t('startStack')" :disabled="processing"
+                    @click="startService"
+                >
+                    <font-awesome-icon icon="play" />
+                </button>
+                <button
+                    v-if="serviceCount > 1 && (status === 'running' || status === 'healthy' || status === 'unhealthy')"
+                    type="button" class="btn-icon" :title="$t('restartStack')" :disabled="processing"
+                    @click="restartService"
+                >
+                    <font-awesome-icon icon="rotate" />
+                </button>
+                <button
+                    v-if="serviceCount > 1 && (status === 'running' || status === 'healthy' || status === 'unhealthy')"
+                    type="button" class="btn-icon" :title="$t('stopStack')" :disabled="processing"
+                    @click="stopService"
+                >
+                    <font-awesome-icon icon="stop" />
+                </button>
             </div>
         </div>
 
-        <div v-if="isEditMode" class="mt-2">
-            <button class="btn btn-normal me-2" @click="showConfig = !showConfig">
+        <div class="image mono">
+            {{ imageName }}<span class="tag">:{{ imageTag }}</span>
+        </div>
+
+        <div v-if="imageUpdate && !isEditMode && hasImageUpdateInfo" class="image-update">
+            <span
+                v-if="imageUpdate.digestUpdate"
+                class="update-mark digest-update"
+                :title="$t('imageDigestUpdateTitle', { tag: imageTag })"
+            >
+                <font-awesome-icon icon="cloud-arrow-down" />{{ $t("imageUpdateAvailable") }}
+            </span>
+            <span v-if="imageUpdate.newTags.length > 0" class="new-tags">
+                <span class="new-tags-label">{{ $t("newTags") }}</span>
+                <span v-for="tag in visibleNewTags" :key="tag" class="tag-chip mono">{{ tag }}</span>
+                <a v-if="!showAllTags && hiddenTagCount > 0" href="#" class="more-link" @click.prevent="showAllTags = true">{{ $t("andMore", { n: hiddenTagCount }) }}</a>
+                <a v-else-if="showAllTags" href="#" class="more-link" @click.prevent="showAllTags = false">{{ $t("showLess") }}</a>
+            </span>
+            <span v-if="imageUpdate.status === 'error'" class="check-error" :title="imageUpdate.message">
+                <font-awesome-icon icon="exclamation-circle" />{{ $t("imageUpdateCheckFailed") }}
+            </span>
+        </div>
+
+        <div v-if="!isEditMode && (ports ?? envsubstService.ports)?.length" class="ports">
+            <a v-for="port in (ports ?? envsubstService.ports)" :key="port" :href="parsePort(port).url" target="_blank" rel="noopener" class="port mono">
+                {{ parsePort(port).display }}
+            </a>
+        </div>
+
+        <div v-if="isEditMode" class="edit-actions">
+            <button class="btn btn-sm btn-normal" @click="showConfig = !showConfig">
                 <font-awesome-icon icon="edit" />
                 {{ $t("Edit") }}
             </button>
-            <button v-if="false" class="btn btn-normal me-2">Rename</button>
-            <button class="btn btn-danger me-2" @click="remove">
+            <button class="btn btn-sm btn-danger" @click="remove">
                 <font-awesome-icon icon="trash" />
                 {{ $t("deleteContainer") }}
             </button>
         </div>
-        <div v-else-if="statsInstances.length > 0" class="mt-2">
-            <div class="d-flex align-items-center gap-3">
+        <div v-else-if="statsInstances.length > 0" class="stats-row">
+            <div class="stats-line">
                 <template v-if="!expandedStats">
-                    <div class="stats">
-                        {{ $t('CPU') }}: {{ statsInstances[0].CPUPerc }}
-                    </div>
-                    <div class="stats">
-                        {{ $t('memoryAbbreviated') }}: {{ statsInstances[0].MemUsage }}
-                    </div>
+                    <span class="stats"><span class="stats-label">{{ $t('CPU') }}</span> <span class="mono">{{ statsInstances[0].CPUPerc }}</span></span>
+                    <span class="stats"><span class="stats-label">{{ $t('memoryAbbreviated') }}</span> <span class="mono">{{ statsInstances[0].MemUsage }}</span></span>
                 </template>
-                <div class="d-flex flex-grow-1 justify-content-end">
-                    <button class="btn btn-sm btn-normal" @click="expandedStats = !expandedStats">
-                        <font-awesome-icon :icon="expandedStats ? 'chevron-up' : 'chevron-down'" />
-                    </button>
-                </div>
+                <button type="button" class="btn-icon ms-auto" :title="expandedStats ? $t('showLess') : $t('showMore')" @click="expandedStats = !expandedStats">
+                    <font-awesome-icon :icon="expandedStats ? 'chevron-up' : 'chevron-down'" />
+                </button>
             </div>
             <transition name="slide-fade" appear>
                 <div v-if="expandedStats" class="d-flex flex-column gap-3 mt-2">
@@ -278,13 +262,15 @@ export default defineComponent({
             return list;
         },
 
-        bgStyle() {
+        ledClass() {
             if (this.status === "running" || this.status === "healthy") {
-                return "bg-primary";
-            } else if (this.status === "unhealthy") {
-                return "bg-danger";
+                return "ok";
+            } else if (this.status === "unhealthy" || this.status === "exited" || this.status === "dead") {
+                return "err";
+            } else if (this.status === "restarting" || this.status === "starting" || this.status === "paused") {
+                return "warn";
             } else {
-                return "bg-secondary";
+                return "off";
             }
         },
 
@@ -421,37 +407,194 @@ export default defineComponent({
 <style scoped lang="scss">
 @import "../styles/vars";
 
-.container {
-    .image {
-        font-size: 0.8rem;
-        color: #6c757d;
-        .tag {
-            color: #33383b;
-        }
-    }
+.container-card {
+    padding: 16px 20px;
+}
 
-    .image-update {
-        font-size: 0.8rem;
-        color: #6c757d;
+.card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 32px;
+}
 
-        .new-tag {
-            background-color: $primary;
-            color: $dark-font-color2;
-        }
-    }
+.service-name {
+    font-size: 16px;
+    line-height: 24px;
+    margin: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
 
-    .function {
-        align-content: center;
-        display: flex;
-        height: 100%;
-        width: 100%;
+.service-status {
+    font-size: 13px;
+    color: var(--text-3);
+}
+
+.card-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+
+    .btn-icon {
+        display: inline-flex;
         align-items: center;
-        justify-content: end;
-    }
+        justify-content: center;
+        text-decoration: none;
 
-    .stats {
-        font-size: 0.8rem;
-        color: #6c757d;
+        svg {
+            width: 14px;
+        }
     }
+}
+
+.image {
+    margin-top: 4px;
+    padding-left: 18px;
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--text-2);
+    overflow-wrap: anywhere;
+
+    .tag {
+        color: var(--text-3);
+    }
+}
+
+.image-update {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    margin-top: 12px;
+    padding-left: 18px;
+    font-size: 13px;
+    color: var(--text-2);
+}
+
+.digest-update,
+.check-error {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.digest-update {
+    font-size: 13px;
+    gap: 6px;
+}
+
+.check-error {
+    color: var(--err);
+
+    svg {
+        width: 13px;
+    }
+}
+
+.new-tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.new-tags-label {
+    color: var(--text-3);
+    margin-right: 2px;
+}
+
+.tag-chip {
+    font-size: 12px;
+    line-height: 16px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    color: var(--text);
+    background-color: var(--raised);
+    border: 1px solid var(--hairline);
+}
+
+.more-link {
+    font-size: 12px;
+    color: var(--text-3);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--hairline-strong);
+
+    &:hover {
+        color: var(--text);
+    }
+}
+
+.ports {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+    padding-left: 18px;
+}
+
+.port {
+    font-size: 12px;
+    line-height: 16px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    color: var(--accent-ink);
+    border: 1px solid var(--hairline);
+    text-decoration: none;
+    transition: border-color 0.15s $ease, background-color 0.15s $ease;
+
+    &:hover {
+        border-color: var(--hairline-strong);
+        background-color: var(--raised);
+    }
+}
+
+.edit-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.stats-row {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--hairline);
+}
+
+.stats-line {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-left: 18px;
+
+    .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+
+        svg {
+            width: 12px;
+        }
+    }
+}
+
+.stats {
+    white-space: nowrap;
+    font-size: 12px;
+    color: var(--text-2);
+}
+
+.stats-label {
+    color: var(--text-3);
+}
+
+.config {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--hairline);
 }
 </style>

@@ -1,15 +1,15 @@
 <template>
     <router-link :to="url" :class="{ 'dim' : !stack.isManagedByDockge }" class="item">
-        <Uptime :stack="stack" :fixed-width="true" class="me-2" />
-        <div class="title">
-            <span>{{ stackName }}</span>
-        </div>
-        <font-awesome-icon
+        <Uptime :stack="stack" />
+        <span class="title" :title="stackName">{{ stackName }}</span>
+        <span
             v-if="stack.imageUpdateCount > 0"
-            icon="arrow-alt-circle-up"
-            class="image-update-icon ms-auto"
+            class="update-mark"
             :title="$t('stackHasImageUpdates', { n: stack.imageUpdateCount })"
-        />
+        >
+            <font-awesome-icon icon="cloud-arrow-down" />
+            <span class="mono">{{ stack.imageUpdateCount }}</span>
+        </span>
     </router-link>
 </template>
 
@@ -52,15 +52,7 @@ export default {
             default: () => {}
         },
     },
-    data() {
-        return {
-            isCollapsed: true,
-        };
-    },
     computed: {
-        endpointDisplay() {
-            return this.$root.endpointDisplayFunction(this.stack.endpoint);
-        },
         url() {
             if (this.stack.endpoint) {
                 return `/compose/${this.stack.name}/${this.stack.endpoint}`;
@@ -68,55 +60,9 @@ export default {
                 return `/compose/${this.stack.name}`;
             }
         },
-        depthMargin() {
-            return {
-                marginLeft: `${31 * this.depth}px`,
-            };
-        },
         stackName() {
             return this.stack.name;
         }
-    },
-    watch: {
-        isSelectMode() {
-            // TODO: Resize the heartbeat bar, but too slow
-            // this.$refs.heartbeatBar.resize();
-        }
-    },
-    beforeMount() {
-
-    },
-    methods: {
-        /**
-         * Changes the collapsed value of the current stack and saves
-         * it to local storage
-         * @returns {void}
-         */
-        changeCollapsed() {
-            this.isCollapsed = !this.isCollapsed;
-
-            // Save collapsed value into local storage
-            let storage = window.localStorage.getItem("stackCollapsed");
-            let storageObject = {};
-            if (storage !== null) {
-                storageObject = JSON.parse(storage);
-            }
-            storageObject[`stack_${this.stack.id}`] = this.isCollapsed;
-
-            window.localStorage.setItem("stackCollapsed", JSON.stringify(storageObject));
-        },
-
-        /**
-         * Toggle selection of stack
-         * @returns {void}
-         */
-        toggleSelection() {
-            if (this.isSelected(this.stack.id)) {
-                this.deselect(this.stack.id);
-            } else {
-                this.select(this.stack.id);
-            }
-        },
     },
 };
 </script>
@@ -124,68 +70,47 @@ export default {
 <style lang="scss" scoped>
 @import "../styles/vars.scss";
 
-.small-padding {
-    padding-left: 5px !important;
-    padding-right: 5px !important;
-}
-
-.collapse-padding {
-    padding-left: 8px !important;
-    padding-right: 2px !important;
-}
-
 .item {
-    text-decoration: none;
     display: flex;
     align-items: center;
-    min-height: 52px;
+    gap: 10px;
+    height: 32px;
+    padding: 0 10px;
     border-radius: 10px;
-    transition: all ease-in-out 0.15s;
-    width: 100%;
-    padding: 5px 8px;
-    &.disabled {
-        opacity: 0.3;
-    }
+    color: var(--text-2);
+    text-decoration: none;
+    transition: color 0.15s $ease, background-color 0.15s $ease;
+
     &:hover {
-        background-color: $highlight-white;
+        color: var(--text);
+        background-color: var(--raised);
     }
-    &.active {
-        background-color: #cdf8f4;
+
+    &.active,
+    &.router-link-active {
+        color: var(--text);
+        background-color: var(--accent-soft);
     }
-    .title {
-        margin-top: -4px;
-    }
-    .endpoint {
-        font-size: 12px;
-        color: $dark-font-color3;
+
+    &:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
     }
 }
 
-.collapsed {
-    transform: rotate(-90deg);
+.title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
-.animated {
-    transition: all 0.2s $easing-in;
-}
-
-.select-input-wrapper {
-    float: left;
-    margin-top: 15px;
-    margin-left: 3px;
-    margin-right: 10px;
-    padding-left: 4px;
-    position: relative;
-    z-index: 15;
+.update-mark {
+    margin-right: 2px;
 }
 
 .dim {
-    opacity: 0.5;
+    opacity: 0.55;
 }
-
-.image-update-icon {
-    color: $warning;
-    flex-shrink: 0;
-}
-
 </style>

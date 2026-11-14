@@ -2,16 +2,11 @@
     <div class="form-container" data-cy="setup-form">
         <div class="form">
             <form @submit.prevent="submit">
-                <div>
-                    <object width="64" height="64" data="/icon.svg" />
-                    <div style="font-size: 28px; font-weight: bold; margin-top: 5px;">
-                        Dockge
-                    </div>
+                <div class="auth-brand">
+                    <img src="/icon.svg" alt="" width="56" height="56" />
+                    <div class="auth-brand-name">Dockge</div>
+                    <div class="auth-brand-note">{{ $t("Create your admin account") }}</div>
                 </div>
-
-                <p class="mt-3">
-                    {{ $t("Create your admin account") }}
-                </p>
 
                 <div class="form-floating">
                     <select id="language" v-model="$root.language" class="form-select">
@@ -103,8 +98,8 @@ export default {
 .form-container {
     display: flex;
     align-items: center;
-    padding-top: 40px;
-    padding-bottom: 40px;
+    min-height: calc(100vh - 56px);
+    padding: 40px 16px;
 }
 
 .form-floating {
@@ -119,11 +114,12 @@ export default {
     }
 
     > label {
-        padding-left: 1.3rem;
+        padding-left: 14px;
     }
 
-    > .form-control {
-        padding-left: 1.3rem;
+    > .form-control,
+    > .form-select {
+        padding-left: 14px;
     }
 }
 

@@ -79,16 +79,20 @@ export default {
 }
 
 .stats {
-    font-size: 0.8rem;
-    color: #6c757d;
+    font-size: 12px;
+    color: var(--text-2);
+    font-family: "JetBrains Mono", monospace;
+    font-variant-numeric: tabular-nums;
 }
 
 .stat-label {
-    font-weight: bold;
+    font-family: "IBM Plex Sans", sans-serif;
+    font-weight: 400;
+    color: var(--text-3);
 }
 
 .stats-title {
-    font-size: 0.9rem;
-    color: var(--bs-heading-color);
+    font-size: 13px;
+    color: var(--text);
 }
 </style>
