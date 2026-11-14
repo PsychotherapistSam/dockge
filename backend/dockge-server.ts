@@ -36,6 +36,7 @@ import { AgentProxySocketHandler } from "./socket-handlers/agent-proxy-socket-ha
 import { AgentSocketHandler } from "./agent-socket-handler";
 import { AgentSocket } from "../common/agent-socket";
 import { ManageAgentSocketHandler } from "./socket-handlers/manage-agent-socket-handler";
+import { StackMoveSocketHandler } from "./socket-handlers/stack-move-socket-handler";
 import { Terminal } from "./terminal";
 import { ImageUpdateChecker } from "./image-update-checker";
 import { RegistryLogins } from "./registry-logins";
@@ -61,6 +62,7 @@ export class DockgeServer {
     socketHandlerList : SocketHandler[] = [
         new MainSocketHandler(),
         new ManageAgentSocketHandler(),
+        new StackMoveSocketHandler(),
     ];
 
     agentProxySocketHandler = new AgentProxySocketHandler();

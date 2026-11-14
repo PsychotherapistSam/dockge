@@ -75,6 +75,7 @@ export class Stack {
             composeYAML: this.composeYAML,
             composeENV: this.composeENV,
             primaryHostname,
+            movedTo: this.movedTo,
         };
     }
 
@@ -143,6 +144,18 @@ export class Stack {
             return null;
         }
         return JSON.parse(res.stdout.toString());
+    }
+
+    /** Set when this folder is the stopped copy left behind by moving the stack to another server */
+    get movedTo() : { name : string, url : string, at : number } | null {
+        try {
+            const marker = JSON.parse(fs.readFileSync(path.join(this.path, ".dockge-moved.json"), "utf-8"));
+            return { name: marker.name,
+                url: marker.url,
+                at: marker.at };
+        } catch (e) {
+            return null;
+        }
     }
 
     get isManagedByDockge() : boolean {
