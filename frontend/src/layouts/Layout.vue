@@ -16,7 +16,7 @@
                 <span class="fs-4 title">Dockge</span>
             </router-link>
 
-            <a v-if="hasNewVersion" target="_blank" href="https://github.com/louislam/dockge/releases" class="btn btn-warning me-3">
+            <a v-if="hasNewVersion" target="_blank" :href="releasesURL" class="btn btn-warning me-3">
                 <font-awesome-icon icon="arrow-alt-circle-up" /> {{ $t("newUpdate") }}
             </a>
 
@@ -98,7 +98,7 @@
 <script>
 import Login from "../components/Login.vue";
 import { compareVersions } from "compare-versions";
-import { ALL_ENDPOINTS } from "../../../common/util-common";
+import { ALL_ENDPOINTS, GITHUB_RELEASES_URL } from "../../../common/util-common";
 
 export default {
 
@@ -113,6 +113,10 @@ export default {
     },
 
     computed: {
+
+        releasesURL() {
+            return GITHUB_RELEASES_URL;
+        },
 
         // Theme or Mobile
         classes() {

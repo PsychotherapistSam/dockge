@@ -45,6 +45,10 @@ async function initRandomBytes() {
 
 export const ALL_ENDPOINTS = "##ALL_DOCKGE_ENDPOINTS##";
 
+// Repository whose GitHub releases are used for the "new version available" check
+export const GITHUB_REPO = "PsychotherapistSam/dockge";
+export const GITHUB_RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases`;
+
 // Stack Status
 export const UNKNOWN = 0;
 export const CREATED_FILE = 1;
