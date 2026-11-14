@@ -67,7 +67,13 @@ export function connectToDockge(url : string, auth : { token? : string, username
                 } else if (res?.tokenRequired) {
                     fail(new Error("That account uses two-factor sign-in, which linking doesn't support yet"));
                 } else {
-                    fail(new Error(res?.msg ? `Sign-in failed: ${res.msg}` : "Sign-in failed"));
+                    if (auth.token) {
+                        fail(new Error(`The saved sign-in for ${url} no longer works, usually because the password there changed. Unlink the server and link it again`));
+                    } else if (res?.msg === "authIncorrectCreds") {
+                        fail(new Error("Wrong username or password for that server"));
+                    } else {
+                        fail(new Error(res?.msg ? `Sign-in failed: ${res.msg}` : "Sign-in failed"));
+                    }
                 }
             };
             if (auth.token) {

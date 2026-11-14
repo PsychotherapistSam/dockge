@@ -220,7 +220,11 @@ export class MoveReceiver {
             let output = "";
             if (start) {
                 const stack = await Stack.getStack(this.server, t.stackName);
-                output = await run("docker", stack.getComposeOptions("up", "-d", "--remove-orphans"), stackDir);
+                try {
+                    output = await run("docker", stack.getComposeOptions("up", "-d", "--remove-orphans"), stackDir);
+                } catch (e) {
+                    throw new Error(`Starting the stack on the other server failed, so it was removed there again. ${e instanceof Error ? e.message : e}`);
+                }
             }
 
             this.server.sendStackList();
