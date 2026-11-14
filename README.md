@@ -151,6 +151,22 @@ services:
       dockge.update.exclude_tags: "rc;beta"      # ignore tags matching (regexes, separated by ;)
 ```
 
+## Moving Stacks Between Servers
+
+Link other Dockge servers under **Settings → Linked servers**, then use **Move to another server…** in a stack's toolbar menu. Linked servers are only move targets: their stacks never show up in your list (unlike agents).
+
+A move:
+
+1. checks the target first: stack name free, published ports free, external networks present, enough disk space, same CPU architecture
+2. stops the stack (`docker compose down`)
+3. packs the stack folder and its named volumes, keeping numeric owners, permissions, ACLs and extended attributes (`tar --numeric-owner --same-owner --acls --xattrs`), so restrictive folders like database directories arrive intact
+4. sends everything over the authenticated connection, with a checksum per file
+5. unpacks on the target and starts the stack there if it was running
+
+If anything fails after the stack was stopped, the target removes what it created and the stack is started again here. The stopped copy stays on the old server, marked as moved, until you remove it.
+
+Not moved: bind mounts outside the stack folder, external or non-local volumes, and `global.env` (each server has its own). The check lists them before you start. Both servers need this version of Dockge, running as root (the default), with the stacks folder at the same path on the host and in the container. Linking stores a sign-in token for the other server, never the password, and the token stops working when that server's password changes.
+
 ## Private Registries
 
 Sign in under **Settings → Registries**. Dockge runs `docker login` against its own docker config in `data/docker`, so the logins work for pulls, deploys and the image update check, even inside the container and when the host keeps its logins in a credential helper.
