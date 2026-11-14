@@ -159,6 +159,8 @@ export default {
             check: null,
             progress: {},
             failedPhase: "",
+            /** Whether the stack ran when the move started; its live status turns "stopped" mid-move */
+            startsThere: false,
         };
     },
 
@@ -177,7 +179,7 @@ export default {
                 { id: "transfer",
                     label: this.$t("movePhaseTransfer", { name: target }) },
                 { id: "start",
-                    label: this.running ? this.$t("movePhaseStart", { name: target }) : this.$t("movePhaseUnpack", { name: target }) },
+                    label: this.startsThere ? this.$t("movePhaseStart", { name: target }) : this.$t("movePhaseUnpack", { name: target }) },
             ];
         },
 
@@ -206,6 +208,7 @@ export default {
 
     methods: {
         reset() {
+            this.startsThere = this.running;
             this.step = "choose";
             this.check = null;
             this.progress = {};
@@ -239,6 +242,7 @@ export default {
         },
 
         start() {
+            this.startsThere = this.check?.source?.running ?? this.running;
             this.step = "moving";
             this.progress = { phase: "stop",
                 message: "" };
