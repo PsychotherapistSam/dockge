@@ -428,7 +428,7 @@ export default {
     height: 20px;
 
     svg {
-        width: 13px;
+        width: 12px;
     }
 
     .complete & {

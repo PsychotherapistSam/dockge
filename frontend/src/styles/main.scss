@@ -81,7 +81,7 @@ h1, .h1 {
     font-size: 28px;
     line-height: 36px;
     font-weight: 500;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
 }
 
 h2, .h2 {
@@ -192,8 +192,8 @@ a {
     color: var(--accent-ink);
 
     svg {
-        width: 13px;
-        height: 13px;
+        width: 12px;
+        height: 12px;
     }
 }
 
@@ -416,7 +416,7 @@ hr {
     border-radius: 10px;
 
     svg {
-        width: 13px;
+        width: 14px;
     }
 
     &:hover,

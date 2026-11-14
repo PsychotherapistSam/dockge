@@ -132,7 +132,7 @@ export default {
     color: var(--text-2);
 
     svg {
-        width: 13px;
+        width: 12px;
         color: var(--text-3);
         flex-shrink: 0;
     }

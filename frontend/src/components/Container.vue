@@ -489,7 +489,7 @@ export default defineComponent({
     color: var(--err);
 
     svg {
-        width: 13px;
+        width: 12px;
     }
 }
 

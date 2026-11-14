@@ -56,8 +56,8 @@
 
                             <!-- Edit Dialog -->
                             <BModal v-model="showEditAgentNameDialog[agentItem.name]" :no-close-on-backdrop="true" :close-on-esc="true" :okTitle="$t('Update Name')" okVariant="primary" @ok="updateName(agentItem.url, agentItem.updatedName)">
-                                <label for="updatedName" class="form-label">Current value: {{ $t(agentItem.name) }}</label>
-                                <input id="updatedName" v-model="agentItem.updatedName" type="text" class="form-control" optional>
+                                <label for="updatedName" class="form-label">{{ $t("name") }}</label>
+                                <input id="updatedName" v-model="agentItem.updatedName" type="text" class="form-control" :placeholder="agentItem.name">
                             </BModal>
 
                             <!-- Remove Agent Dialog -->
@@ -402,7 +402,7 @@ export default {
     display: grid;
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
     gap: 24px;
-    align-items: start;
+    align-items: stretch;
 }
 
 .section-title {

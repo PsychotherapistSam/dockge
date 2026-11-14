@@ -224,7 +224,7 @@
                     </div>
                 </div>
                 <div class="col-lg-6">
-                    <h2 class="section-title mono file-name">{{ stack.composeFileName }}</h2>
+                    <h2 class="section-title mono file-name">{{ stack.composeFileName || "compose.yaml" }}</h2>
 
                     <!-- YAML editor -->
                     <div class="shadow-box mb-3 editor-box" :class="{'edit-mode' : isEditMode}">

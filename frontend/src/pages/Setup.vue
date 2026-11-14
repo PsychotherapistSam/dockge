@@ -126,8 +126,8 @@ export default {
 .form {
 
     width: 100%;
-    max-width: 330px;
-    padding: 15px;
+    max-width: 320px;
+    padding: 16px;
     margin: auto;
     text-align: center;
 }

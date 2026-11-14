@@ -240,7 +240,7 @@ export default {
     transition: color 0.15s $ease, background-color 0.15s $ease;
 
     svg {
-        width: 15px;
+        width: 16px;
         color: var(--text-3);
         transition: color 0.15s $ease;
     }
