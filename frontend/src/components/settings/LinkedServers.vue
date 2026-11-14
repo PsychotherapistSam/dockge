@@ -15,11 +15,15 @@
                     <font-awesome-icon icon="arrows-rotate" :spin="tests[link.id]?.state === 'busy'" />
                     {{ $t("linkTest") }}
                 </button>
-                <button class="btn btn-normal btn-sm" type="button" @click="remove(link)">
+                <button class="btn btn-normal btn-sm" type="button" @click="removing = link">
                     {{ $t("linkRemove") }}
                 </button>
             </SettingsRow>
         </SettingsCard>
+
+        <BModal :model-value="!!removing" :title="$t('linkRemove')" :cancelTitle="$t('cancel')" :okTitle="$t('linkRemove')" okVariant="danger" @update:model-value="removing = null" @ok="remove(removing)">
+            {{ $t("linkRemoveConfirm", { name: removing?.name ?? "" }) }}
+        </BModal>
 
         <form @submit.prevent="add">
             <SettingsCard :title="$t('linkAddTitle')" :description="$t('linkAddHelp')">
@@ -47,11 +51,13 @@
 </template>
 
 <script>
+import { BModal } from "bootstrap-vue-next";
 import SettingsCard from "./SettingsCard.vue";
 import SettingsRow from "./SettingsRow.vue";
 
 export default {
     components: {
+        BModal,
         SettingsCard,
         SettingsRow,
     },
@@ -62,6 +68,7 @@ export default {
             links: [],
             tests: {},
             adding: false,
+            removing: null,
             form: {
                 url: "",
                 name: "",
@@ -123,9 +130,7 @@ export default {
         },
 
         remove(link) {
-            if (!confirm(this.$t("linkRemoveConfirm", { name: link.name }))) {
-                return;
-            }
+            this.removing = null;
             this.$root.getSocket().emit("linkedServerRemove", link.id, (res) => {
                 this.$root.toastRes(res);
                 this.load();

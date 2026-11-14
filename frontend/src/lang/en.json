@@ -249,7 +249,7 @@
     "linkRemove": "Unlink",
     "linkRemoveConfirm": "Unlink {name}? Stacks already moved there are not affected.",
     "linkAddTitle": "Link a server",
-    "linkAddHelp": "Signs in to the other Dockge once and keeps only a sign-in token, never the password. Signing in on this server isn't needed on that one.",
+    "linkAddHelp": "Signs in to the other Dockge once and keeps only a sign-in token, never the password.",
     "linkAddress": "Address",
     "linkAddressHelp": "Where this server reaches the other Dockge",
     "linkName": "Name",
