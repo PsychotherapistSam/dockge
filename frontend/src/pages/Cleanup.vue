@@ -85,7 +85,9 @@
                         <span class="item-name mono">{{ image.tags[0] ?? image.id.replace("sha256:", "").slice(0, 12) }}</span>
                         <span v-if="image.tags.length > 1" class="item-meta">+{{ image.tags.length - 1 }}</span>
                         <span v-if="image.dangling" class="tag-chip">{{ $t("cleanupDanglingTag") }}</span>
-                        <span v-if="image.stoppedOnly" class="tag-chip" :title="$t('cleanupStoppedOnlyHelp')">{{ $t("cleanupStoppedOnly", { stacks: image.stacks.join(", ") || "-" }) }}</span>
+                        <span v-if="image.stoppedOnly" class="tag-chip" :title="$t('cleanupStoppedOnlyHelp')">
+                            {{ image.stacks.length ? $t("cleanupStoppedOnly", { stacks: image.stacks.join(", ") }) : $t("cleanupStoppedContainer") }}
+                        </span>
                         <span class="item-meta mono ms-auto">{{ formatBytes(image.uniqueSize) }}</span>
                     </li>
                 </ul>
@@ -143,7 +145,10 @@
                 </p>
                 <ul v-if="preview.volumes.length > 0" class="item-list">
                     <li v-for="v in visible('volumes', preview.volumes)" :key="v.name">
-                        <span class="item-name mono">{{ v.name.slice(0, 16) }}…</span>
+                        <span class="item-name mono" :title="v.name">{{ v.name.slice(0, 16) }}…</span>
+                        <span v-if="v.stoppedOnly" class="tag-chip" :title="$t('cleanupStoppedOnlyHelp')">
+                            {{ v.stacks.length ? $t("cleanupStoppedOnly", { stacks: v.stacks.join(", ") }) : $t("cleanupStoppedContainer") }}
+                        </span>
                         <span class="item-meta mono ms-auto">{{ formatBytes(v.size) }}</span>
                     </li>
                 </ul>

@@ -49,6 +49,9 @@ export interface CleanupImage {
 export interface CleanupVolume {
     name : string;
     size : number;
+    /** Used only by stopped containers, unused once those are pruned */
+    stoppedOnly : boolean;
+    stacks : string[];
 }
 
 export interface CleanupPreview {
@@ -243,16 +246,36 @@ export class DockerCleanup {
             }
         }
 
-        // Unused anonymous volumes, only offered where `volume prune` leaves named ones alone
+        // Unused anonymous volumes, only offered where `volume prune` leaves named ones alone.
+        // Like images, volumes of stopped containers count as unused once those containers are pruned.
         const dockerVersion = (await docker([ "version", "--format", "{{.Server.Version}}" ])).trim();
         const volumesSupported = Number(dockerVersion.split(".")[0]) >= 23;
         const volumes : CleanupVolume[] = [];
         if (volumesSupported) {
-            for (const v of jsonLines<Record<string, string>>(await docker([ "volume", "ls", "--filter", "dangling=true", "--format", "{{json .}}" ]))) {
-                if (labelValue(v.Labels, "com.docker.volume.anonymous") !== "" || /(^|,)com\.docker\.volume\.anonymous=/.test(v.Labels || "")) {
-                    volumes.push({ name: v.Name,
-                        size: volumeSizes.get(v.Name) ?? 0 });
+            const mountedBy = new Map<string, string[]>();
+            if (allContainers.length > 0) {
+                const format = "{{.Id}}|{{range .Mounts}}{{if eq .Type \"volume\"}}{{.Name}},{{end}}{{end}}";
+                for (const line of (await docker([ "inspect", "--format", format, ...allContainers.map((c) => c.ID) ])).split("\n")) {
+                    const [ id, names ] = line.trim().split("|");
+                    for (const name of (names ?? "").split(",").filter(Boolean)) {
+                        mountedBy.set(name, [ ...(mountedBy.get(name) ?? []), id ]);
+                    }
                 }
+            }
+            const keepIds = new Set(keepContainers.map((c) => c.ID));
+            const stoppedById = new Map(stopped.map((c) => [ c.ID, c ]));
+            for (const v of jsonLines<Record<string, string>>(await docker([ "volume", "ls", "--filter", "label=com.docker.volume.anonymous", "--format", "{{json .}}" ]))) {
+                const users = mountedBy.get(v.Name) ?? [];
+                if (users.some((id) => keepIds.has(id))) {
+                    continue;
+                }
+                const stacks = new Set(users.map((id) => labelValue(stoppedById.get(id)?.Labels ?? "", "com.docker.compose.project")).filter(Boolean));
+                volumes.push({
+                    name: v.Name,
+                    size: volumeSizes.get(v.Name) ?? 0,
+                    stoppedOnly: users.length > 0,
+                    stacks: [ ...stacks ],
+                });
             }
         }
 

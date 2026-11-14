@@ -327,5 +327,6 @@
     "cleanupConfirmCache": "build cache, about {size}",
     "cleanupConfirmVolumes": "{n} anonymous volumes and their data",
     "cleanupConfirmStacks": "These stopped stacks lose their containers and start fresh next time: {stacks}",
-    "cleanupFreed": "Freed {size}"
+    "cleanupFreed": "Freed {size}",
+    "cleanupStoppedContainer": "used by a stopped container"
 }
