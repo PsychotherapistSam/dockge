@@ -10,6 +10,8 @@ permissions: {}
 
 jobs:
   release-nightly:
+    # Publishes to the upstream Docker Hub / GHCR accounts, so never run on forks
+    if: github.repository == 'louislam/dockge'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     permissions:

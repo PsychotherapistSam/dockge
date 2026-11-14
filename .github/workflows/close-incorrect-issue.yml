@@ -6,6 +6,7 @@ on:
 
 jobs:
   close-incorrect-issue:
+    if: github.repository == 'louislam/dockge'
     runs-on: ${{ matrix.os }}
 
     strategy:
