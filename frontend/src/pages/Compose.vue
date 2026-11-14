@@ -68,15 +68,22 @@
             <div v-if="!isAdd && stack.movedTo" class="moved-callout">
                 <font-awesome-icon icon="truck-fast" class="moved-callout-icon" />
                 <div class="moved-callout-text">
-                    <div>{{ $t("movedBanner", { name: stack.movedTo.name }) }}</div>
-                    <div class="moved-callout-hint">{{ $t("movedBannerHint", { when: movedAgo }) }}</div>
+                    <div class="moved-callout-title">
+                        {{ $t("movedBanner", { name: stack.movedTo.name }) }}
+                        <span class="moved-callout-when" :title="stack.movedTo.at">{{ movedAgo }}</span>
+                    </div>
+                    <div class="moved-callout-hint">{{ $t("movedBannerHint") }}</div>
                 </div>
-                <a :href="`${stack.movedTo.url}/compose/${stack.name}`" target="_blank" rel="noopener" class="btn btn-normal btn-sm">
-                    {{ $t("moveOpenThere", { name: stack.movedTo.name }) }}
-                </a>
-                <button class="btn btn-danger btn-sm" type="button" :disabled="processing" @click="showRemoveMovedDialog = true">
-                    {{ $t("movedRemoveCopy") }}
-                </button>
+                <div class="moved-callout-actions">
+                    <button class="btn btn-normal btn-sm moved-remove" type="button" :disabled="processing" @click="showRemoveMovedDialog = true">
+                        <font-awesome-icon icon="trash" />
+                        {{ $t("movedRemoveCopy") }}
+                    </button>
+                    <a :href="`${stack.movedTo.url}/compose/${stack.name}`" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
+                        {{ $t("moveOpenThere", { name: stack.movedTo.name }) }}
+                        <font-awesome-icon icon="arrow-up-right-from-square" />
+                    </a>
+                </div>
             </div>
 
             <!-- Image updates -->
@@ -1037,10 +1044,6 @@ export default {
     border-radius: 14px;
     border: 1px solid var(--hairline-strong);
     background-color: var(--raised);
-
-    .btn:first-of-type {
-        margin-left: auto;
-    }
 }
 
 .moved-callout-icon {
@@ -1051,7 +1054,45 @@ export default {
 }
 
 .moved-callout-text {
+    flex: 1 1 240px;
     min-width: 0;
+}
+
+.moved-callout-title {
+    font-weight: 500;
+}
+
+.moved-callout-when {
+    margin-left: 6px;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-3);
+}
+
+.moved-callout-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    svg {
+        width: 12px;
+    }
+}
+
+.moved-remove {
+    color: var(--err);
+
+    &:hover {
+        color: var(--err);
+        border-color: color-mix(in srgb, var(--err) 45%, transparent);
+    }
 }
 
 .moved-callout-hint {
